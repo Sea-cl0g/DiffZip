@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Flex, Splitter, Typography, Layout } from 'antd';
+import { unzip } from 'unzipit';
 import { buildZipDiffMetadata } from '../utils/zip/diffMetadata';
 import { buildTreeData } from '../utils/treeBuilder';
 
@@ -72,6 +73,44 @@ export default function DiffView({ files }) {
             cancelled = true;
         };
     }, [files?.file1, files?.file2]);
+
+    useEffect(() => {
+        if (!selectedFile) {
+            return;
+        }
+
+        const path = selectedFile.path;
+        const status = selectedFile.status;
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                if (status === 'deleted' || status === 'modified') {
+                    const beforeZipInfo = await unzip(files.file1);
+                    const beforeEntry = beforeZipInfo.entries[path];
+                    if (beforeEntry) {
+                        const beforeText = await beforeEntry.text();
+                        console.log("before: "+beforeText);
+                    }
+                }
+                if (status === 'added' || status === 'modified') {
+                    const afterZipInfo = await unzip(files.file2);
+                    const afterEntry = afterZipInfo.entries[path];
+                    if (afterEntry) {
+                        const afterText = await afterEntry.text();
+                        console.log("before: "+afterText);
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to read file text:', e);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [selectedFile, files?.file1, files?.file2]);
 
     function handleTreeSelect(_, { node }) {
         if (node.data !== null && node.data !== undefined) {
