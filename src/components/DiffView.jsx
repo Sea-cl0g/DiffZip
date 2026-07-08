@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Flex, Splitter, Typography, Layout } from 'antd';
 import { buildZipDiffMetadata } from '../utils/zip/diffMetadata';
+import { buildTreeData } from '../utils/treeBuilder';
 
-import Tree from './Tree';
+import Tree from './FileTree';
 
 const { Content, Sider } = Layout;
 
@@ -42,6 +43,8 @@ const siderStyle = {
 };
 
 export default function DiffView({ files }) {
+    const [treeData, setTreeData] = useState([]);
+
     useEffect(() => {
         const beforeZip = files?.file1;
         const afterZip = files?.file2;
@@ -56,9 +59,11 @@ export default function DiffView({ files }) {
             try {
                 const result = await buildZipDiffMetadata(beforeZip, afterZip);
                 if (!cancelled) {
-                    console.log(result);
+                    const tree = buildTreeData(result.changes);
+                    setTreeData(tree);
                 }
-            } catch {
+            } catch (e) {
+                console.error('Failed to build diff metadata:', e);
             }
         })();
 
@@ -71,7 +76,7 @@ export default function DiffView({ files }) {
         <div style={{ height: '100%', minHeight: 0 }}>
             <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
                 <Splitter.Panel defaultSize="20%" min="20%" max="70%">
-                    <Tree />
+                    <Tree treeData={treeData} />
                 </Splitter.Panel>
                 <Splitter.Panel>
                     <Layout hasSider style={layoutStyle}>
