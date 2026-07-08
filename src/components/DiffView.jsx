@@ -228,19 +228,15 @@ export default function DiffView({ files }) {
         <div style={{ height: '100%', minHeight: 0 }}>
             <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
                 <Splitter.Panel defaultSize="20%" min="20%" max="70%">
-                    <Tree
-                        treeData={treeData}
-                        onSelect={handleTreeSelect}
-                    />
+                    <div className="diff-panel">
+                        <Tree
+                            treeData={treeData}
+                            onSelect={handleTreeSelect}
+                        />
+                    </div>
                 </Splitter.Panel>
                 <Splitter.Panel>
-                    <div style={{
-                        flex: 1,
-                        minWidth: 0,
-                        minHeight: 0,
-                        overflow: 'auto',
-                        margin: '10px',
-                    }}>
+                    <div className="diff-panel">
                         {imageCompareUrls?.before || imageCompareUrls?.after ? (
                             <DiffImage
                                 beforeUrl={imageCompareUrls?.before}

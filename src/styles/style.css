@@ -21,6 +21,24 @@ body {
   overflow: hidden;
 }
 
+.diff-panel {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 10px;
+  overflow: auto;
+}
+
+.diff-panel .d2h-file-wrapper {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.diff-panel .d2h-code-linenumber,
+.diff-panel .d2h-code-side-linenumber {
+  position: static;
+}
+
 .header {
   padding: 24px;
   color: #000000;
