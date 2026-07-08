@@ -15,6 +15,8 @@ export function buildTreeData(changes) {
                     name: part,
                     isFile,
                     status: isFile ? change.status : null,
+                    left: isFile ? change.left : null,
+                    right: isFile ? change.right : null,
                     children: {},
                 };
             }
@@ -38,6 +40,8 @@ export function buildTreeData(changes) {
                     path: currentPath,
                     isFile: item.isFile,
                     status: item.status,
+                    left: item.isFile ? item.left : null,
+                    right: item.isFile ? item.right : null,
                 },
             };
 
