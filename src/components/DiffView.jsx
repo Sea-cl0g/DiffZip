@@ -90,8 +90,7 @@ export default function DiffView({ files }) {
                     const beforeZipInfo = await unzip(files.file1);
                     const beforeEntry = beforeZipInfo.entries[path];
                     if (beforeEntry) {
-                        const beforeText = await beforeEntry.text();
-                        console.log("before: "+beforeText);
+                        beforeText = await beforeEntry.text();
                     }
                 }
                 if (status === 'added' || status === 'modified') {
@@ -99,7 +98,7 @@ export default function DiffView({ files }) {
                     const afterEntry = afterZipInfo.entries[path];
                     if (afterEntry) {
                         const afterText = await afterEntry.text();
-                        console.log("before: "+afterText);
+                        console.log("after: "+afterText);
                     }
                 }
             } catch (e) {
