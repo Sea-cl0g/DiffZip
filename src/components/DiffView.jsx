@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Flex, Splitter, Typography, Layout } from 'antd';
+import { buildZipDiffMetadata } from '../utils/zip/diffMetadata';
 const { Content, Sider } = Layout;
 
 export const Desc = props => (
@@ -37,7 +38,32 @@ const siderStyle = {
     borderBottomRightRadius: '8px',
 };
 
-export default function DiffView() {
+export default function DiffView({ files }) {
+    useEffect(() => {
+        const beforeZip = files?.file1;
+        const afterZip = files?.file2;
+
+        if (!beforeZip || !afterZip) {
+            return;
+        }
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                const result = await buildZipDiffMetadata(beforeZip, afterZip);
+                if (!cancelled) {
+                    console.log(result);
+                }
+            } catch {
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [files?.file1, files?.file2]);
+
     return (
         <>
             <Splitter style={{ height: '100%', boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
