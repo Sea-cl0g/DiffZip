@@ -6,7 +6,7 @@ import { html } from 'diff2html';
 import 'diff2html/bundles/css/diff2html.min.css';
 import { buildZipDiffMetadata } from '../utils/zip/diffMetadata';
 import { buildTreeData } from '../utils/treeBuilder';
-
+import DiffImage from './DiffImage';
 import Tree from './FileTree';
 
 const { Content, Sider } = Layout;
@@ -67,6 +67,7 @@ export default function DiffView({ files }) {
     const [treeData, setTreeData] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
     const [diffHtml, setDiffHtml] = useState('');
+    const [imageCompareUrls, setImageCompareUrls] = useState(null);
     const imageBlobUrlsRef = useRef({ before: null, after: null });
 
     const revokeImageBlobUrls = useCallback(() => {
@@ -116,6 +117,7 @@ export default function DiffView({ files }) {
         if (!selectedFile) {
             revokeImageBlobUrls();
             setDiffHtml('');
+            setImageCompareUrls(null);
             return;
         }
 
@@ -132,6 +134,9 @@ export default function DiffView({ files }) {
                 revokeImageBlobUrls();
 
                 if (imageMimeType) {
+                    let beforeUrl = null;
+                    let afterUrl = null;
+
                     if ((status === 'deleted' || status === 'modified') && beforeZipPath) {
                         const beforeZipInfo = await unzip(files.file1);
                         const beforeEntry = beforeZipInfo.entries[beforeZipPath];
@@ -139,6 +144,7 @@ export default function DiffView({ files }) {
                             const beforeBlob = await beforeEntry.blob(imageMimeType);
                             imageBlobUrlsRef.current.before = URL.createObjectURL(beforeBlob);
                             console.log('[before]', imageBlobUrlsRef.current.before);
+                            beforeUrl = imageBlobUrlsRef.current.before;
                         }
                     }
 
@@ -149,14 +155,20 @@ export default function DiffView({ files }) {
                             const afterBlob = await afterEntry.blob(imageMimeType);
                             imageBlobUrlsRef.current.after = URL.createObjectURL(afterBlob);
                             console.log('[after]', imageBlobUrlsRef.current.after);
+                            afterUrl = imageBlobUrlsRef.current.after;
                         }
                     }
 
                     if (!cancelled) {
                         setDiffHtml('');
+                        setImageCompareUrls({ before: beforeUrl, after: afterUrl });
                     }
 
                     return;
+                }
+
+                if (!cancelled) {
+                    setImageCompareUrls(null);
                 }
 
                 let beforeText = '';
@@ -206,7 +218,6 @@ export default function DiffView({ files }) {
 
     function handleTreeSelect(_, { node }) {
         if (node.data !== null && node.data !== undefined) {
-            const a = node.data.isFile
             if (node.data?.isFile) {
                 setSelectedFile(node.data);
             }
@@ -230,7 +241,12 @@ export default function DiffView({ files }) {
                         overflow: 'auto',
                         margin: '10px',
                     }}>
-                        {diffHtml ? (
+                        {imageCompareUrls?.before || imageCompareUrls?.after ? (
+                            <DiffImage
+                                beforeUrl={imageCompareUrls?.before}
+                                afterUrl={imageCompareUrls?.after}
+                            />
+                        ) : diffHtml ? (
                             <div dangerouslySetInnerHTML={{ __html: diffHtml }} />
                         ) : (
                             <Typography.Text type="secondary">ファイルを選択してください</Typography.Text>
