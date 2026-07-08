@@ -48,7 +48,7 @@ export default function Footer() {
                             shape="circle"
                             icon={<GithubOutlined />}
                             size="large"
-                            href="https://github.com/Sea-cl0g/redates/tree/main"
+                            href="https://github.com/Sea-cl0g/DiffZip/tree/main"
                             target="_blank"
                             rel="noreferrer"
                         />
@@ -61,7 +61,7 @@ export default function Footer() {
                 onCancel={() => setIsModalOpen(false)}
                 loading={loading}
                 footer={
-                    <p>View source on <a href={repositoryName && refCommit ? `https://github.com${repositoryName}/blob/${refCommit}/README.md` : 'https://github.com/Sea-cl0g/redates'} target="_blank" rel="noreferrer">GitHub</a>.</p>
+                    <p>View source on <a href={repositoryName && refCommit ? `https://github.com${repositoryName}/blob/${refCommit}/README.md` : 'https://github.com/Sea-cl0g/DiffZip'} target="_blank" rel="noreferrer">GitHub</a>.</p>
                 }
                 width={800}
                 styles={{ body: { maxHeight: '60vh', overflowY: 'auto' } }}
