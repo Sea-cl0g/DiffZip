@@ -76,8 +76,10 @@ export default function DiffView({ files }) {
             return;
         }
 
-        const path = selectedFile.path;
+        const displayPath = selectedFile.path;
         const status = selectedFile.status;
+        const beforeZipPath = selectedFile.left?.zipPath;
+        const afterZipPath = selectedFile.right?.zipPath;
 
         let cancelled = false;
 
@@ -86,17 +88,17 @@ export default function DiffView({ files }) {
                 let beforeText = '';
                 let afterText = '';
 
-                if (status === 'deleted' || status === 'modified') {
+                if ((status === 'deleted' || status === 'modified') && beforeZipPath) {
                     const beforeZipInfo = await unzip(files.file1);
-                    const beforeEntry = beforeZipInfo.entries[path];
+                    const beforeEntry = beforeZipInfo.entries[beforeZipPath];
                     if (beforeEntry) {
                         beforeText = await beforeEntry.text();
                     }
                 }
 
-                if (status === 'added' || status === 'modified') {
+                if ((status === 'added' || status === 'modified') && afterZipPath) {
                     const afterZipInfo = await unzip(files.file2);
-                    const afterEntry = afterZipInfo.entries[path];
+                    const afterEntry = afterZipInfo.entries[afterZipPath];
                     if (afterEntry) {
                         afterText = await afterEntry.text();
                     }
@@ -104,7 +106,7 @@ export default function DiffView({ files }) {
 
                 if (!cancelled) {
                     const diffPatch = createPatch(
-                        path,
+                        displayPath,
                         beforeText,
                         afterText,
                     );
