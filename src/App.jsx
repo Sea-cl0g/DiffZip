@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Header from "./components/Header";
+import Footer from "./components/Footer";
 import Body from "./components/Body";
 
 export default function App() {
@@ -18,12 +18,12 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Header />
       <Body
         view={view}
         files={files}
         onFileChange={handleFileChange}
       />
+      <Footer />
     </div>
   );
 }

@@ -65,7 +65,7 @@ function UploadPane({ title, onFile }) {
 export default function Upload({ onFileChange }) {
     return (
         <div className="main-content">
-            <Title level={3}>ZIPファイルを選択</Title>
+            <Title level={3} style={{ textAlign: 'center' }}>同じ構造のzipファイルを2つアップロードしてください</Title>
             <Divider />
             <Layout hasSider style={{ flex: 1, minHeight: 0, gap: '16px', background: 'transparent' }}>
                 <Content style={contentStyle}>
