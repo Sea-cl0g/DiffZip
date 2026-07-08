@@ -60,7 +60,7 @@ function UploadPane({ title }) {
 
 export default function Upload() {
     return (
-        <>
+        <div className="main-content">
             <Title level={3}>aaa</Title>
             <Divider />
             <Layout hasSider style={{ flex: 1, minHeight: 0, gap: '16px', background: 'transparent' }}>
@@ -71,6 +71,6 @@ export default function Upload() {
                     <UploadPane title="変更後のzip" />
                 </Sider>
             </Layout>
-        </>
+        </div>
     );
 }

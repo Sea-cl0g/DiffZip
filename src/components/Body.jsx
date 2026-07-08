@@ -1,10 +1,8 @@
 import React from 'react';
-import Upload from "./Upload";
+import Upload from "./DiffView";
 
 export default function Body() {
     return (
-        <div className="main-content">
-            <Upload />
-        </div>
+        <Upload />
     );
 }
