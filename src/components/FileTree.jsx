@@ -21,6 +21,11 @@ export default function FileTree({ treeData, onSelect }) {
             defaultExpandedKeys={collectAllKeys(treeData)}
             onSelect={onSelect}
             treeData={treeData}
+            titleRender={(node) => (
+                <span style={node.data?.status === 'deleted' ? { textDecoration: 'line-through', opacity: 0.5 } : undefined}>
+                    {node.title}
+                </span>
+            )}
         />
     );
 }
