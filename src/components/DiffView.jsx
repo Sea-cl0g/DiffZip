@@ -1,20 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { Flex, Splitter, Typography, Layout } from 'antd';
 import { unzip } from 'unzipit';
+import { diffLines, createPatch } from 'diff';
+import { html } from 'diff2html';
+import 'diff2html/bundles/css/diff2html.min.css';
 import { buildZipDiffMetadata } from '../utils/zip/diffMetadata';
 import { buildTreeData } from '../utils/treeBuilder';
 
 import Tree from './FileTree';
 
 const { Content, Sider } = Layout;
-
-export const Desc = props => (
-    <Flex justify="center" align="center" style={{ height: '100%' }}>
-        <Typography.Title type="secondary" level={5} style={{ whiteSpace: 'nowrap' }}>
-            {props.text}
-        </Typography.Title>
-    </Flex>
-);
 
 const contentStyle = {
     flex: 1,
@@ -46,6 +41,7 @@ const siderStyle = {
 export default function DiffView({ files }) {
     const [treeData, setTreeData] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [diffHtml, setDiffHtml] = useState('');
 
     useEffect(() => {
         const beforeZip = files?.file1;
@@ -76,6 +72,7 @@ export default function DiffView({ files }) {
 
     useEffect(() => {
         if (!selectedFile) {
+            setDiffHtml('');
             return;
         }
 
@@ -86,6 +83,9 @@ export default function DiffView({ files }) {
 
         (async () => {
             try {
+                let beforeText = '';
+                let afterText = '';
+
                 if (status === 'deleted' || status === 'modified') {
                     const beforeZipInfo = await unzip(files.file1);
                     const beforeEntry = beforeZipInfo.entries[path];
@@ -93,13 +93,32 @@ export default function DiffView({ files }) {
                         beforeText = await beforeEntry.text();
                     }
                 }
+
                 if (status === 'added' || status === 'modified') {
                     const afterZipInfo = await unzip(files.file2);
                     const afterEntry = afterZipInfo.entries[path];
                     if (afterEntry) {
-                        const afterText = await afterEntry.text();
-                        console.log("after: "+afterText);
+                        afterText = await afterEntry.text();
                     }
+                }
+
+                if (!cancelled) {
+                    const diffPatch = createPatch(
+                        path,
+                        beforeText,
+                        afterText,
+                    );
+
+                    console.log('diffPatch:', diffPatch);
+
+                    const diffHtmlOutput = html(diffPatch, {
+                        drawFileList: false,
+                        matching: 'lines',
+                        outputFormat: 'side-by-side',
+                    });
+
+                    console.log('diffHtmlOutput:', diffHtmlOutput);
+                    setDiffHtml(diffHtmlOutput);
                 }
             } catch (e) {
                 console.error('Failed to read file text:', e);
@@ -116,7 +135,6 @@ export default function DiffView({ files }) {
             const a = node.data.isFile
             if (node.data?.isFile) {
                 setSelectedFile(node.data);
-                console.log(node.data);
             }
         }
     }
@@ -131,14 +149,19 @@ export default function DiffView({ files }) {
                     />
                 </Splitter.Panel>
                 <Splitter.Panel>
-                    <Layout hasSider style={layoutStyle}>
-                        <Content style={contentStyle}>
-                            <p>test</p>
-                        </Content>
-                        <Sider theme="light" width="50%" style={siderStyle}>
-                            <p>test</p>
-                        </Sider>
-                    </Layout>
+                    <div style={{
+                        flex: 1,
+                        minWidth: 0,
+                        minHeight: 0,
+                        overflow: 'auto',
+                        margin: '10px',
+                    }}>
+                        {diffHtml ? (
+                            <div dangerouslySetInnerHTML={{ __html: diffHtml }} />
+                        ) : (
+                            <Typography.Text type="secondary">ファイルを選択してください</Typography.Text>
+                        )}
+                    </div>
                 </Splitter.Panel>
             </Splitter>
         </div>

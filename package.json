@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "antd": "^6.5.0",
+    "diff": "^5.1.0",
+    "diff2html": "^3.4.42",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "unzipit": "^2.0.3"
