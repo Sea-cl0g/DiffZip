@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react';
 import { Flex, Splitter, Typography, Layout } from 'antd';
 import { buildZipDiffMetadata } from '../utils/zip/diffMetadata';
+
+import Tree from './Tree';
+
 const { Content, Sider } = Layout;
 
 export const Desc = props => (
@@ -68,7 +71,7 @@ export default function DiffView({ files }) {
         <>
             <Splitter style={{ height: '100%', boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
                 <Splitter.Panel defaultSize="20%" min="20%" max="70%">
-                    <Desc text="First" />
+                    <Tree />
                 </Splitter.Panel>
                 <Splitter.Panel>
                     <Layout hasSider style={layoutStyle}>
