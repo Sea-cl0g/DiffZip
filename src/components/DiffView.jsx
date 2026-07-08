@@ -44,6 +44,7 @@ const siderStyle = {
 
 export default function DiffView({ files }) {
     const [treeData, setTreeData] = useState([]);
+    const [selectedFile, setSelectedFile] = useState(null);
 
     useEffect(() => {
         const beforeZip = files?.file1;
@@ -72,11 +73,24 @@ export default function DiffView({ files }) {
         };
     }, [files?.file1, files?.file2]);
 
+    function handleTreeSelect(_, { node }) {
+        if (node.data !== null && node.data !== undefined) {
+            const a = node.data.isFile
+            if (node.data?.isFile) {
+                setSelectedFile(node.data);
+                console.log(node.data);
+            }
+        }
+    }
+
     return (
         <div style={{ height: '100%', minHeight: 0 }}>
             <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
                 <Splitter.Panel defaultSize="20%" min="20%" max="70%">
-                    <Tree treeData={treeData} />
+                    <Tree
+                        treeData={treeData}
+                        onSelect={handleTreeSelect}
+                    />
                 </Splitter.Panel>
                 <Splitter.Panel>
                     <Layout hasSider style={layoutStyle}>
