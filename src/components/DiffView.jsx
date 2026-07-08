@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Flex, Splitter, Typography, Layout } from 'antd';
 import { unzip } from 'unzipit';
 import { diffLines, createPatch } from 'diff';
@@ -38,10 +38,52 @@ const siderStyle = {
     borderBottomRightRadius: '8px',
 };
 
+const IMAGE_EXTENSION_TO_MIME = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.bmp': 'image/bmp',
+    '.svg': 'image/svg+xml',
+};
+
+function getImageMimeTypeFromPath(path) {
+    if (!path) {
+        return null;
+    }
+
+    const lowerPath = String(path).toLowerCase();
+    for (const [extension, mimeType] of Object.entries(IMAGE_EXTENSION_TO_MIME)) {
+        if (lowerPath.endsWith(extension)) {
+            return mimeType;
+        }
+    }
+
+    return null;
+}
+
 export default function DiffView({ files }) {
     const [treeData, setTreeData] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
     const [diffHtml, setDiffHtml] = useState('');
+    const imageBlobUrlsRef = useRef({ before: null, after: null });
+
+    const revokeImageBlobUrls = useCallback(() => {
+        if (imageBlobUrlsRef.current.before) {
+            URL.revokeObjectURL(imageBlobUrlsRef.current.before);
+            imageBlobUrlsRef.current.before = null;
+        }
+
+        if (imageBlobUrlsRef.current.after) {
+            URL.revokeObjectURL(imageBlobUrlsRef.current.after);
+            imageBlobUrlsRef.current.after = null;
+        }
+    }, []);
+
+    useEffect(() => () => {
+        revokeImageBlobUrls();
+    }, [revokeImageBlobUrls]);
 
     useEffect(() => {
         const beforeZip = files?.file1;
@@ -72,6 +114,7 @@ export default function DiffView({ files }) {
 
     useEffect(() => {
         if (!selectedFile) {
+            revokeImageBlobUrls();
             setDiffHtml('');
             return;
         }
@@ -80,11 +123,42 @@ export default function DiffView({ files }) {
         const status = selectedFile.status;
         const beforeZipPath = selectedFile.left?.zipPath;
         const afterZipPath = selectedFile.right?.zipPath;
+        const imageMimeType = getImageMimeTypeFromPath(afterZipPath || beforeZipPath || displayPath);
 
         let cancelled = false;
 
         (async () => {
             try {
+                revokeImageBlobUrls();
+
+                if (imageMimeType) {
+                    if ((status === 'deleted' || status === 'modified') && beforeZipPath) {
+                        const beforeZipInfo = await unzip(files.file1);
+                        const beforeEntry = beforeZipInfo.entries[beforeZipPath];
+                        if (beforeEntry) {
+                            const beforeBlob = await beforeEntry.blob(imageMimeType);
+                            imageBlobUrlsRef.current.before = URL.createObjectURL(beforeBlob);
+                            console.log('[before]', imageBlobUrlsRef.current.before);
+                        }
+                    }
+
+                    if ((status === 'added' || status === 'modified') && afterZipPath) {
+                        const afterZipInfo = await unzip(files.file2);
+                        const afterEntry = afterZipInfo.entries[afterZipPath];
+                        if (afterEntry) {
+                            const afterBlob = await afterEntry.blob(imageMimeType);
+                            imageBlobUrlsRef.current.after = URL.createObjectURL(afterBlob);
+                            console.log('[after]', imageBlobUrlsRef.current.after);
+                        }
+                    }
+
+                    if (!cancelled) {
+                        setDiffHtml('');
+                    }
+
+                    return;
+                }
+
                 let beforeText = '';
                 let afterText = '';
 
@@ -126,8 +200,9 @@ export default function DiffView({ files }) {
 
         return () => {
             cancelled = true;
+            revokeImageBlobUrls();
         };
-    }, [selectedFile, files?.file1, files?.file2]);
+    }, [selectedFile, files?.file1, files?.file2, revokeImageBlobUrls]);
 
     function handleTreeSelect(_, { node }) {
         if (node.data !== null && node.data !== undefined) {
