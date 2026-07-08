@@ -13,8 +13,6 @@ export default function FileTree({ treeData, onSelect }) {
         return keys;
     }
 
-    console.log(treeData)
-
     return (
         <Tree
             showLine
