@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "VITE_COMMIT_REF=$COMMIT_REF VITE_REPOSITORY_URL=$REPOSITORY_URL VITE_AUTHOR_INFO=$AUTHOR_INFO VITE_DEPLOYED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ) vite build",
     "preview": "vite preview"
   },
   "keywords": [],
@@ -14,6 +14,7 @@
   "license": "ISC",
   "devDependencies": {
     "@vitejs/plugin-react": "^4.7.0",
+    "netlify-cli": "^26.2.0",
     "vite": "^4.4.11"
   },
   "dependencies": {
@@ -23,6 +24,9 @@
     "img-comparison-slider": "^8.0.7",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "react-markdown": "^10.1.0",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
     "unzipit": "^2.0.3"
   }
 }
