@@ -109,15 +109,12 @@ export default function DiffView({ files }) {
                         afterText,
                     );
 
-                    console.log('diffPatch:', diffPatch);
-
                     const diffHtmlOutput = html(diffPatch, {
                         drawFileList: false,
                         matching: 'lines',
                         outputFormat: 'side-by-side',
                     });
 
-                    console.log('diffHtmlOutput:', diffHtmlOutput);
                     setDiffHtml(diffHtmlOutput);
                 }
             } catch (e) {
