@@ -35,13 +35,17 @@ const paneInnerStyle = {
     flexDirection: 'column',
 };
 
-function UploadPane({ title }) {
+function UploadPane({ title, onFile }) {
     const props = {
         name: 'file',
         multiple: false,
         maxCount: 1,
-        beforeUpload() {
+        beforeUpload(file) {
+            onFile(file);
             return false;
+        },
+        onRemove() {
+            onFile(null);
         },
     };
 
@@ -58,17 +62,17 @@ function UploadPane({ title }) {
     );
 }
 
-export default function Upload() {
+export default function Upload({ onFileChange }) {
     return (
         <div className="main-content">
-            <Title level={3}>aaa</Title>
+            <Title level={3}>ZIPファイルを選択</Title>
             <Divider />
             <Layout hasSider style={{ flex: 1, minHeight: 0, gap: '16px', background: 'transparent' }}>
                 <Content style={contentStyle}>
-                    <UploadPane title="変更前のzip" />
+                    <UploadPane title="変更前のzip" onFile={(f) => onFileChange('file1', f)} />
                 </Content>
                 <Sider theme="light" width="50%" style={contentStyle}>
-                    <UploadPane title="変更後のzip" />
+                    <UploadPane title="変更後のzip" onFile={(f) => onFileChange('file2', f)} />
                 </Sider>
             </Layout>
         </div>
