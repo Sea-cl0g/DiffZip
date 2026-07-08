@@ -1,10 +1,9 @@
 import React from 'react';
 import { InboxOutlined } from '@ant-design/icons';
-import { Divider, Typography, Upload as AntUpload, Layout } from 'antd';
+import { Divider, Typography, Upload as AntUpload, Layout, Flex } from 'antd';
 const { Title } = Typography;
 
 const { Dragger } = AntUpload;
-const { Content, Sider } = Layout;
 
 const contentStyle = {
     flex: 1,
@@ -21,6 +20,7 @@ const contentStyle = {
 
 const draggerStyle = {
     flex: 1,
+    height: '100%',
     minHeight: 0,
     display: 'flex',
     alignItems: 'center',
@@ -33,6 +33,18 @@ const paneInnerStyle = {
     minHeight: 0,
     display: 'flex',
     flexDirection: 'column',
+};
+
+const uploadRootStyle = {
+    height: '100%',
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+};
+
+const panesRowStyle = {
+    flex: 1,
+    minHeight: 0,
 };
 
 function UploadPane({ title, onFile }) {
@@ -50,7 +62,7 @@ function UploadPane({ title, onFile }) {
     };
 
     return (
-        <div style={paneInnerStyle}>
+        <div className="upload-pane" style={paneInnerStyle}>
             <Title level={4}>{title}</Title>
             <Dragger {...props} style={draggerStyle}>
                 <p className="ant-upload-drag-icon">
@@ -64,17 +76,17 @@ function UploadPane({ title, onFile }) {
 
 export default function Upload({ onFileChange }) {
     return (
-        <div className="main-content">
-            <Title level={3}>ZIPファイルを選択</Title>
+        <div style={uploadRootStyle}>
+            <Title level={3} style={{ textAlign: 'center' }}>同じ構造のzipファイルを2つアップロードしてください</Title>
             <Divider />
-            <Layout hasSider style={{ flex: 1, minHeight: 0, gap: '16px', background: 'transparent' }}>
-                <Content style={contentStyle}>
+            <Flex style={panesRowStyle} gap={16}>
+                <div style={contentStyle}>
                     <UploadPane title="変更前のzip" onFile={(f) => onFileChange('file1', f)} />
-                </Content>
-                <Sider theme="light" width="50%" style={contentStyle}>
+                </div>
+                <div style={contentStyle}>
                     <UploadPane title="変更後のzip" onFile={(f) => onFileChange('file2', f)} />
-                </Sider>
-            </Layout>
+                </div>
+            </Flex>
         </div>
     );
 }

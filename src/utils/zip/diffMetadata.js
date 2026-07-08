@@ -14,11 +14,49 @@ function toEntryMeta(entry) {
 
     return {
         path: normalizedPath,
+        zipPath: normalizedPath,
         size: Number.isFinite(entry.size) ? entry.size : null,
         compressedSize: Number.isFinite(entry.compressedSize) ? entry.compressedSize : null,
         crc32,
         lastModMs: entry.lastModDate instanceof Date ? entry.lastModDate.getTime() : null,
     };
+}
+
+function detectSingleRootFolderPrefix(paths) {
+    if (paths.length === 0) {
+        return '';
+    }
+
+    const firstSegments = new Set();
+
+    for (const path of paths) {
+        const separatorIndex = path.indexOf('/');
+        if (separatorIndex <= 0) {
+            return '';
+        }
+
+        firstSegments.add(path.slice(0, separatorIndex));
+        if (firstSegments.size > 1) {
+            return '';
+        }
+    }
+
+    return `${paths[0].slice(0, paths[0].indexOf('/'))}/`;
+}
+
+function stripPrefix(path, prefix) {
+    return prefix && path.startsWith(prefix) ? path.slice(prefix.length) : path;
+}
+
+function buildComparableEntryMap(rawMap, rootPrefix) {
+    const comparableMap = new Map();
+
+    for (const meta of rawMap.values()) {
+        const comparablePath = stripPrefix(meta.zipPath, rootPrefix);
+        comparableMap.set(comparablePath, meta);
+    }
+
+    return comparableMap;
 }
 
 function metadataChanged(leftMeta, rightMeta) {
@@ -68,10 +106,19 @@ export async function buildZipDiffMetadata(beforeZipFile, afterZipFile) {
     }
 
     const startedAt = performance.now();
-    const [beforeMap, afterMap] = await Promise.all([
+    const [beforeRawMap, afterRawMap] = await Promise.all([
         listZipFileEntries(beforeZipFile),
         listZipFileEntries(afterZipFile),
     ]);
+
+    const beforeMap = buildComparableEntryMap(
+        beforeRawMap,
+        detectSingleRootFolderPrefix([...beforeRawMap.keys()]),
+    );
+    const afterMap = buildComparableEntryMap(
+        afterRawMap,
+        detectSingleRootFolderPrefix([...afterRawMap.keys()]),
+    );
 
     const allPaths = new Set([...beforeMap.keys(), ...afterMap.keys()]);
     const sortedPaths = [...allPaths].sort((a, b) => a.localeCompare(b));
