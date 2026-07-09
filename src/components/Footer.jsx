@@ -3,7 +3,7 @@ const refCommit = import.meta.env.VITE_COMMIT_REF;
 
 import { useState } from 'react';
 import { GithubOutlined, QuestionCircleOutlined } from '@ant-design/icons';
-import { Button, Flex, Tooltip, Modal } from 'antd';
+import { Button, Flex, Tooltip, Modal, Divider } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -33,6 +33,7 @@ export default function Footer() {
 
     return (
         <>
+            <Divider />
             <Flex justify="center" style={{ paddingBottom: 16 }}>
                 <Flex gap="small" wrap>
                     <Tooltip title="About">

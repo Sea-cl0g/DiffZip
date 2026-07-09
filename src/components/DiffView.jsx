@@ -1,42 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Flex, Splitter, Typography, Layout } from 'antd';
+import { Splitter, Typography } from 'antd';
 import { unzip } from 'unzipit';
-import { diffLines, createPatch } from 'diff';
+import { createPatch } from 'diff';
 import { html } from 'diff2html';
 import 'diff2html/bundles/css/diff2html.min.css';
 import { buildZipDiffMetadata } from '../utils/zip/diffMetadata';
 import { buildTreeData } from '../utils/treeBuilder';
 import DiffImage from './DiffImage';
 import Tree from './FileTree';
-
-const { Content, Sider } = Layout;
-
-const contentStyle = {
-    flex: 1,
-    minWidth: 0,
-    minHeight: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '24px',
-    overflow: 'hidden',
-};
-
-const layoutStyle = {
-    flex: 1,
-    minHeight: 0,
-    background: '#ffffff',
-    border: '1px solid #d9d9d9',
-    borderRadius: '8px',
-    margin: '16px',
-    overflow: 'hidden',
-};
-
-const siderStyle = {
-    ...contentStyle,
-    borderLeft: '1px solid #d9d9d9',
-    borderTopRightRadius: '8px',
-    borderBottomRightRadius: '8px',
-};
 
 const IMAGE_EXTENSION_TO_MIME = {
     '.png': 'image/png',
@@ -65,6 +36,7 @@ function getImageMimeTypeFromPath(path) {
 
 export default function DiffView({ files }) {
     const [treeData, setTreeData] = useState([]);
+    const [isTreeReady, setIsTreeReady] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [diffHtml, setDiffHtml] = useState('');
     const [imageCompareUrls, setImageCompareUrls] = useState(null);
@@ -102,9 +74,13 @@ export default function DiffView({ files }) {
                 if (!cancelled) {
                     const tree = buildTreeData(result.changes);
                     setTreeData(tree);
+                    setIsTreeReady(true);
                 }
             } catch (e) {
                 console.error('Failed to build diff metadata:', e);
+                if (!cancelled) {
+                    setIsTreeReady(true);
+                }
             }
         })();
 
@@ -226,13 +202,15 @@ export default function DiffView({ files }) {
 
     return (
         <div style={{ height: '100%', minHeight: 0 }}>
-            <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
+            <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', backgroundColor:'#ffffff' }}>
                 <Splitter.Panel defaultSize="20%" min="20%" max="70%">
                     <div className="diff-panel">
-                        <Tree
-                            treeData={treeData}
-                            onSelect={handleTreeSelect}
-                        />
+                        {isTreeReady ? (
+                            <Tree
+                                treeData={treeData}
+                                onSelect={handleTreeSelect}
+                            />
+                        ) : <></>}
                     </div>
                 </Splitter.Panel>
                 <Splitter.Panel>
