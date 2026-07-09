@@ -65,6 +65,7 @@ function getImageMimeTypeFromPath(path) {
 
 export default function DiffView({ files }) {
     const [treeData, setTreeData] = useState([]);
+    const [isTreeReady, setIsTreeReady] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [diffHtml, setDiffHtml] = useState('');
     const [imageCompareUrls, setImageCompareUrls] = useState(null);
@@ -102,9 +103,13 @@ export default function DiffView({ files }) {
                 if (!cancelled) {
                     const tree = buildTreeData(result.changes);
                     setTreeData(tree);
+                    setIsTreeReady(true);
                 }
             } catch (e) {
                 console.error('Failed to build diff metadata:', e);
+                if (!cancelled) {
+                    setIsTreeReady(true);
+                }
             }
         })();
 
@@ -229,10 +234,12 @@ export default function DiffView({ files }) {
             <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
                 <Splitter.Panel defaultSize="20%" min="20%" max="70%">
                     <div className="diff-panel">
-                        <Tree
-                            treeData={treeData}
-                            onSelect={handleTreeSelect}
-                        />
+                        {isTreeReady ? (
+                            <Tree
+                                treeData={treeData}
+                                onSelect={handleTreeSelect}
+                            />
+                        ) : <></>}
                     </div>
                 </Splitter.Panel>
                 <Splitter.Panel>
