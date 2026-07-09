@@ -202,7 +202,7 @@ export default function DiffView({ files }) {
 
     return (
         <div style={{ height: '100%', minHeight: 0 }}>
-            <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)' }}>
+            <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', backgroundColor:'#ffffff' }}>
                 <Splitter.Panel defaultSize="20%" min="20%" max="70%">
                     <div className="diff-panel">
                         {isTreeReady ? (

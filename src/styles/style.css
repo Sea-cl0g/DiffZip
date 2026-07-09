@@ -19,6 +19,7 @@ body {
   min-height: 0;
   padding: 16px;
   overflow: hidden;
+  background-color: #777777;
 }
 
 .diff-panel {
@@ -40,7 +41,8 @@ body {
 }
 
 header {
-  padding: 16px;
+  padding: 16px 32px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .upload-pane>.ant-upload-wrapper {

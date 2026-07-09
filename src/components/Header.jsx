@@ -1,16 +1,14 @@
 import React from 'react';
-import { Divider, Typography } from 'antd';
-const { Title } = Typography;
 
-export default function Header({ view, files, onFileChange }) {
+export default function Header() {
     return (
         <header>
-            <Title level={2}
+            <h1
                 onClick={() => window.location.reload()}
-                style={{ cursor: 'pointer' }}>
+                style={{ cursor: 'pointer', display: 'inline-block', margin: 0 }}
+            >
                 DiffZip
-            </Title>
-            <Divider />
+            </h1>
         </header>
     );
 }
