@@ -1,6 +1,8 @@
 ## 📌Features
 [DiffZip](https://github.com/Sea-cl0g/DiffZip)は、同じ構造を持つ2つのzipファイルを比較し、追加・削除・変更されたファイルを確認するためのツールです。
 
+![header](https://github.com/user-attachments/assets/f55190b8-6747-419d-8b3a-447fe2148898)
+
 ### 1. 2つのzipファイルを比較
 「変更前のzip」と「変更後のzip」をアップロードすると、差分がファイルツリーとして表示されます。
 
