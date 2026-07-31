@@ -51,10 +51,11 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         }
 
         const rect = element.getBoundingClientRect();
+        const heightTmp = window.innerHeight //後で直す
         console.log(rect)
         setSize({
             width: Math.max(0, Math.floor(rect.width)),
-            height: Math.max(300, Math.floor(rect.height)),
+            height: heightTmp * 1 / 2,
         });
     }, [layoutVersion, treeData, treeMode, treeView]);
 
