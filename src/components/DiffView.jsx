@@ -72,7 +72,7 @@ export default function DiffView({ files }) {
             try {
                 const result = await buildZipDiffMetadata(beforeZip, afterZip);
                 if (!cancelled) {
-                    const tree = buildTreeData(result.changes);
+                    const tree = buildTreeData(result, { mode: 'diff' });
                     setTreeData(tree);
                     setIsTreeReady(true);
                 }

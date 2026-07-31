@@ -1,13 +1,24 @@
-import React, { Children } from 'react';
-import { ProductOutlined, BarsOutlined } from '@ant-design/icons';
-import { Tree, Tabs } from 'antd';
+import React from 'react';
+import { ProductOutlined, BarsOutlined, DownOutlined } from '@ant-design/icons';
+import { Tree, Tabs, Dropdown, Space, Flex } from 'antd';
+
+const dropdownItems = [
+    {
+        label: '1st menu item',
+        key: '1'
+    },
+    {
+        label: '2nd menu item',
+        key: '2'
+    }
+];
 
 export default function FileTree({ treeData, onSelect }) {
     const onChange = key => {
         console.log(key);
     };
 
-    const items = [
+    const tabItems = [
         {
             key: '1',
             label: 'ツリー表示',
@@ -31,10 +42,28 @@ export default function FileTree({ treeData, onSelect }) {
             />
         }
     ];
-    
+
+
+    const handleButtonClick = e => {
+        console.log('click', e);
+    };
+    const menuProps = {
+        items: dropdownItems,
+        onClick: handleButtonClick,
+    };
+
     return (
         <>
-            <Tabs defaultActiveKey="1" items={items} onChange={onChange} />
+            <Flex gap="medium" align="end" vertical>
+                <Dropdown menu={menuProps}>
+                    <Space>
+                        Hover me
+                        <DownOutlined />
+                    </Space>
+                </Dropdown>
+
+            </Flex>
+            <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} />
         </>
     );
 }
