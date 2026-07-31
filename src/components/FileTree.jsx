@@ -1,25 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ProductOutlined, BarsOutlined } from '@ant-design/icons';
 import { Tree, Tabs, Select, Flex } from 'antd';
+import TreeMapView from './TreeMapView';
 
-const dropdownItems = [
+const comparisonTargetOptions = [
     {
         label: '差分',
-        key: 'diff'
+        value: 'diff'
     },
     {
         label: '変更前のzip',
-        key: 'left'
+        value: 'left'
     },
     {
         label: '変更後のzip',
-        key: 'right'
+        value: 'right'
     },
 ];
 
-export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTreeModeChange }) {
-    const onChange = key => {
-        console.log(key);
+const treeViewModeOptions = [
+    {
+        label: '差分',
+        value: 'sub'
+    },
+    {
+        label: 'フル',
+        value: 'full'
+    }
+];
+
+export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTreeModeChange, treeLayoutVersion = 0 }) {
+    const [treeView, setTabView] = useState('sub');
+    const [activeTab, setActiveTab] = useState('1');
+
+    const onTabChange = key => {
+        setActiveTab(key);
     };
 
     const handleSelectChange = value => {
@@ -28,12 +43,22 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
         }
     };
 
+    const treeViewChange = value => {
+        setTabView(value)
+    };
+
     const tabItems = [
         {
             key: '1',
             label: 'ツリー表示',
             icon: <ProductOutlined />,
-            children: <p>a</p>
+            children: <TreeMapView
+                treeData={treeData}
+                treeMode={treeMode}
+                treeView={treeView}
+                layoutVersion={treeLayoutVersion}
+                onSelect={onSelect}
+            />
         },
         {
             key: '2',
@@ -53,24 +78,30 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
         }
     ];
 
-    const selectOptions = dropdownItems.map(item => ({
-        value: item.key,
-        label: item.label,
-    }));
-
     return (
-        <>
-            <Flex gap="medium" align="center" justify="flex-end">
-                <p style={{ margin: 0 }}>選択:</p>
-                <Select
-                    value={treeMode}
-                    style={{ width: 160 }}
-                    onChange={handleSelectChange}
-                    options={selectOptions}
-                />
-
+        <div className="file-tree-root">
+            <Flex className="file-tree-controls" gap="medium" justify="space-between">
+                <Flex gap="small" align="center">
+                    <p>選択:</p>
+                    <Select
+                        value={treeMode}
+                        style={{ width: 140 }}
+                        onChange={handleSelectChange}
+                        options={comparisonTargetOptions}
+                        size="small"
+                    />
+                </Flex>
+                {treeMode === "diff" ? <Flex gap="small" align="center">
+                    <Select
+                        value={treeView}
+                        style={{ width: 100 }}
+                        onChange={treeViewChange}
+                        options={treeViewModeOptions}
+                        size="small"
+                    />
+                </Flex> : null}
             </Flex>
-            <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} />
-        </>
+            <Tabs className="file-tree-tabs" activeKey={activeTab} items={tabItems} onChange={onTabChange} />
+        </div>
     );
 }
