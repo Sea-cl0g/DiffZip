@@ -59,6 +59,14 @@ function buildComparableEntryMap(rawMap, rootPrefix) {
     return comparableMap;
 }
 
+function toTreeSourceEntry(path, meta) {
+    return {
+        path,
+        type: 'file',
+        size: Number.isFinite(meta?.size) ? meta.size : 0,
+    };
+}
+
 function metadataChanged(leftMeta, rightMeta) {
     if (!leftMeta || !rightMeta) {
         return true;
@@ -123,23 +131,37 @@ export async function buildZipDiffMetadata(beforeZipFile, afterZipFile) {
     const allPaths = new Set([...beforeMap.keys(), ...afterMap.keys()]);
     const sortedPaths = [...allPaths].sort((a, b) => a.localeCompare(b));
     const changes = [];
+    const left = [];
+    const right = [];
+
+    for (const [path, meta] of beforeMap.entries()) {
+        left.push(toTreeSourceEntry(path, meta));
+    }
+
+    for (const [path, meta] of afterMap.entries()) {
+        right.push(toTreeSourceEntry(path, meta));
+    }
+
+    left.sort((a, b) => a.path.localeCompare(b.path));
+    right.sort((a, b) => a.path.localeCompare(b.path));
 
     for (const path of sortedPaths) {
         const left = beforeMap.get(path) || null;
         const right = afterMap.get(path) || null;
+        const size = Number.isFinite(left?.size) ? left.size : Number.isFinite(right?.size) ? right.size : 0;
 
         if (!left && right) {
-            changes.push({ path, status: 'added', type: 'file', left: null, right });
+            changes.push({ path, status: 'added', type: 'file', size, left: null, right });
             continue;
         }
 
         if (left && !right) {
-            changes.push({ path, status: 'deleted', type: 'file', left, right: null });
+            changes.push({ path, status: 'deleted', type: 'file', size, left, right: null });
             continue;
         }
 
         if (metadataChanged(left, right)) {
-            changes.push({ path, status: 'modified', type: 'file', left, right });
+            changes.push({ path, status: 'modified', type: 'file', size, left, right });
         }
     }
 
@@ -152,6 +174,8 @@ export async function buildZipDiffMetadata(beforeZipFile, afterZipFile) {
 
     return {
         changes,
+        left,
+        right,
         summary,
         elapsedMs: Math.round(performance.now() - startedAt),
     };
