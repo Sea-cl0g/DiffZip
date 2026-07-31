@@ -18,6 +18,7 @@ export function buildTreeData(changes) {
                     left: isFile ? change.left : null,
                     right: isFile ? change.right : null,
                     children: {},
+                    meta: "unti"
                 };
             }
 
