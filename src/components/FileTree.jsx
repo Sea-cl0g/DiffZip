@@ -1,24 +1,37 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ProductOutlined, BarsOutlined } from '@ant-design/icons';
 import { Tree, Tabs, Select, Flex } from 'antd';
 
-const dropdownItems = [
+const comparisonTargetOptions = [
     {
         label: '差分',
-        key: 'diff'
+        value: 'diff'
     },
     {
         label: '変更前のzip',
-        key: 'left'
+        value: 'left'
     },
     {
         label: '変更後のzip',
-        key: 'right'
+        value: 'right'
     },
 ];
 
+const treeViewModeOptions = [
+    {
+        label: '差分',
+        value: 'sub'
+    },
+    {
+        label: 'フル',
+        value: 'full'
+    }
+];
+
 export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTreeModeChange }) {
-    const onChange = key => {
+    const [treeView, setTabView] = useState('sub');
+
+    const onTabChange = key => {
         console.log(key);
     };
 
@@ -26,6 +39,10 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
         if (typeof onTreeModeChange === 'function') {
             onTreeModeChange(value);
         }
+    };
+
+    const treeViewChange = value => {
+        setTabView(value)
     };
 
     const tabItems = [
@@ -53,11 +70,6 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
         }
     ];
 
-    const selectOptions = dropdownItems.map(item => ({
-        value: item.key,
-        label: item.label,
-    }));
-
     return (
         <>
             <Flex className="file-tree-controls" gap="medium" justify="space-between">
@@ -65,14 +77,23 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
                     <p>選択:</p>
                     <Select
                         value={treeMode}
-                        style={{ width: 160 }}
+                        style={{ width: 140 }}
                         onChange={handleSelectChange}
-                        options={selectOptions}
+                        options={comparisonTargetOptions}
+                        size="small"
                     />
                 </Flex>
-                {treeMode === "diff" ? <p>test</p> : null}
+                {treeMode === "diff" ? <Flex gap="small" align="center">
+                    <Select
+                        value={treeView}
+                        style={{ width: 100 }}
+                        onChange={treeViewChange}
+                        options={treeViewModeOptions}
+                        size="small"
+                    />
+                </Flex> : null}
             </Flex>
-            <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} />
+            <Tabs defaultActiveKey="1" items={tabItems} onTabChange={onTabChange} />
         </>
     );
 }
