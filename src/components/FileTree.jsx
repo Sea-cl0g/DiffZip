@@ -60,7 +60,7 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
 
     return (
         <>
-            <Flex gap="medium" align="center" justify="flex-end">
+            <Flex gap="medium" align="center" justify="space-between">
                 <p style={{ margin: 0 }}>選択:</p>
                 <Select
                     value={treeMode}

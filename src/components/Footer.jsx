@@ -32,10 +32,9 @@ export default function Footer() {
     };
 
     return (
-        <>
-            <Divider />
-            <Flex justify="center" style={{ paddingBottom: 16 }}>
-                <Flex gap="small" wrap>
+        <footer>
+            <Flex justify="center" vertical>
+                <Flex gap="small" justify="center" style={{marginTop: 16, marginBottom: 32}}>
                     <Tooltip title="About">
                         <Button
                             shape="circle"
@@ -98,6 +97,6 @@ export default function Footer() {
                     {readmeContent}
                 </ReactMarkdown>
             </Modal>
-        </>
+        </footer>
     );
 }
