@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ProductOutlined, BarsOutlined } from '@ant-design/icons';
 import { Tree, Tabs, Select, Flex } from 'antd';
+import TreeMapView from './TreeMapView';
 
 const comparisonTargetOptions = [
     {
@@ -28,11 +29,12 @@ const treeViewModeOptions = [
     }
 ];
 
-export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTreeModeChange }) {
+export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTreeModeChange, treeLayoutVersion = 0 }) {
     const [treeView, setTabView] = useState('sub');
+    const [activeTab, setActiveTab] = useState('1');
 
     const onTabChange = key => {
-        console.log(key);
+        setActiveTab(key);
     };
 
     const handleSelectChange = value => {
@@ -50,7 +52,13 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
             key: '1',
             label: 'ツリー表示',
             icon: <ProductOutlined />,
-            children: <p>a</p>
+            children: <TreeMapView
+                treeData={treeData}
+                treeMode={treeMode}
+                treeView={treeView}
+                layoutVersion={treeLayoutVersion}
+                onSelect={onSelect}
+            />
         },
         {
             key: '2',
@@ -71,7 +79,7 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
     ];
 
     return (
-        <>
+        <div className="file-tree-root">
             <Flex className="file-tree-controls" gap="medium" justify="space-between">
                 <Flex gap="small" align="center">
                     <p>選択:</p>
@@ -93,7 +101,7 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
                     />
                 </Flex> : null}
             </Flex>
-            <Tabs defaultActiveKey="1" items={tabItems} onTabChange={onTabChange} />
-        </>
+            <Tabs className="file-tree-tabs" activeKey={activeTab} items={tabItems} onChange={onTabChange} />
+        </div>
     );
 }

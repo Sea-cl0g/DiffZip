@@ -48,6 +48,7 @@ export default function DiffView({ files }) {
     const [selectedFile, setSelectedFile] = useState(null);
     const [diffHtml, setDiffHtml] = useState('');
     const [imageCompareUrls, setImageCompareUrls] = useState(null);
+    const [treeLayoutVersion, setTreeLayoutVersion] = useState(0);
     const imageBlobUrlsRef = useRef({ before: null, after: null });
 
     const revokeImageBlobUrls = useCallback(() => {
@@ -232,9 +233,16 @@ export default function DiffView({ files }) {
         }
     }
 
+    function handleSplitterResizeEnd() {
+        setTreeLayoutVersion((prev) => prev + 1);
+    }
+
     return (
         <div style={{ height: '100%', minHeight: 0 }}>
-            <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', backgroundColor: '#ffffff' }}>
+            <Splitter
+                onResizeEnd={handleSplitterResizeEnd}
+                style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', backgroundColor: '#ffffff' }}
+            >
                 <Splitter.Panel defaultSize="30%" min="30%" max="70%">
                     <div className="diff-panel">
                         {isTreeReady ? (
@@ -243,6 +251,7 @@ export default function DiffView({ files }) {
                                 onSelect={handleTreeSelect}
                                 treeMode={treeMode}
                                 onTreeModeChange={handleTreeModeChange}
+                                treeLayoutVersion={treeLayoutVersion}
                             />
                         ) : <></>}
                     </div>

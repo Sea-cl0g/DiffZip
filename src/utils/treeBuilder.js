@@ -137,3 +137,91 @@ export function buildTreeData(input, options = {}) {
 
     return treeToArray(root);
 }
+
+function computeDiffDelta(status, leftSize, rightSize) {
+    if (status === 'added') {
+        return rightSize;
+    }
+    if (status === 'deleted') {
+        return -leftSize;
+    }
+    return rightSize - leftSize;
+}
+
+function toTreemapNode(treeNode, options) {
+    const mode = options.mode || 'diff';
+    const treeView = options.treeView || 'sub';
+    const data = treeNode?.data || {};
+    const children = Array.isArray(treeNode?.children)
+        ? treeNode.children.map((child) => toTreemapNode(child, options)).filter(Boolean)
+        : [];
+
+    if (!data.isFile) {
+        return {
+            name: data.name || treeNode?.title || '',
+            path: data.path || '',
+            isFile: false,
+            status: data.status || null,
+            data,
+            children,
+        };
+    }
+
+    const leftSize = getEntrySize(data.left);
+    const rightSize = getEntrySize(data.right);
+    const status = data.status || null;
+
+    let weight = 0;
+    let baseSize = 0;
+    let delta = 0;
+
+    if (mode === 'diff' && treeView === 'sub') {
+        delta = computeDiffDelta(status, leftSize, rightSize);
+        weight = Math.abs(delta);
+
+        if (status === 'added') {
+            baseSize = rightSize;
+        } else if (status === 'deleted') {
+            baseSize = leftSize;
+        } else {
+            baseSize = rightSize;
+        }
+    } else {
+        if (mode === 'left') {
+            baseSize = leftSize;
+        } else if (mode === 'right') {
+            baseSize = rightSize;
+        } else {
+            baseSize = rightSize || leftSize;
+        }
+
+        weight = baseSize;
+        if (mode === 'diff') {
+            delta = computeDiffDelta(status, leftSize, rightSize);
+        }
+    }
+
+    return {
+        name: data.name || treeNode?.title || '',
+        path: data.path || '',
+        isFile: true,
+        status,
+        weight: weight > 0 ? weight : 0,
+        baseSize,
+        delta,
+        data,
+    };
+}
+
+export function buildTreemapHierarchyData(treeData, options = {}) {
+    const children = Array.isArray(treeData)
+        ? treeData.map((node) => toTreemapNode(node, options)).filter(Boolean)
+        : [];
+
+    return {
+        name: 'root',
+        path: '',
+        isFile: false,
+        children,
+    };
+}
