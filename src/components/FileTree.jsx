@@ -60,15 +60,17 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
 
     return (
         <>
-            <Flex gap="medium" align="center" justify="space-between">
-                <p style={{ margin: 0 }}>選択:</p>
-                <Select
-                    value={treeMode}
-                    style={{ width: 160 }}
-                    onChange={handleSelectChange}
-                    options={selectOptions}
-                />
-
+            <Flex className="file-tree-controls" gap="medium" justify="space-between">
+                <Flex gap="small" align="center">
+                    <p>選択:</p>
+                    <Select
+                        value={treeMode}
+                        style={{ width: 160 }}
+                        onChange={handleSelectChange}
+                        options={selectOptions}
+                    />
+                </Flex>
+                {treeMode === "diff" ? <p>test</p> : null}
             </Flex>
             <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} />
         </>
