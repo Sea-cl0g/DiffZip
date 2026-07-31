@@ -13,7 +13,27 @@ const STATUS_COLORS = {
 
 function formatSize(size) {
     const safeSize = Number.isFinite(size) ? size : 0;
-    return String(safeSize);
+    if (safeSize < 1024) {
+        return `${safeSize} B`;
+    }
+
+    const units = ['KB', 'MB', 'GB', 'TB'];
+    let value = safeSize / 1024;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex += 1;
+    }
+
+    const rounded = value >= 100 ? value.toFixed(0) : value.toFixed(1);
+    return `${rounded} ${units[unitIndex]}`;
+}
+
+function formatDelta(delta) {
+    const safeDelta = Number.isFinite(delta) ? delta : 0;
+    const sign = safeDelta > 0 ? '+' : '';
+    return `${sign}${formatSize(Math.abs(safeDelta))}`;
 }
 
 function formatLabel(nodeData, treeView) {
@@ -23,8 +43,7 @@ function formatLabel(nodeData, treeView) {
     }
 
     const delta = Number.isFinite(nodeData.delta) ? nodeData.delta : 0;
-    const sign = delta > 0 ? '+' : '';
-    return `${base}(${sign}${delta})`;
+    return `${base} (${formatDelta(delta)})`;
 }
 
 function pickNodeColor(nodeData, treeView) {
@@ -51,11 +70,9 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         }
 
         const rect = element.getBoundingClientRect();
-        const heightTmp = window.innerHeight //後で直す
-        console.log(rect)
         setSize({
             width: Math.max(0, Math.floor(rect.width)),
-            height: heightTmp * 1 / 2,
+            height: Math.max(0, Math.floor(rect.height)),
         });
     }, [layoutVersion, treeData, treeMode, treeView]);
 
@@ -116,12 +133,14 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                         const height = Math.max(0, leaf.y1 - leaf.y0);
                         const data = leaf.data;
                         const color = pickNodeColor(data, treeView);
-                        const showLabel = width >= 70 && height >= 20;
+                        const showLabel = width >= 90 && height >= 28;
+                        const showNameLabel = width >= 90 && height >= 42;
                         const label = formatLabel(data, treeView);
+                        const fileName = data.name || data.path;
 
                         return (
                             <g key={data.path} transform={`translate(${leaf.x0}, ${leaf.y0})`}>
-                                <title>{`${data.path}\n${label}`}</title>
+                                <title>{`${fileName}\n${data.path}\n${label}`}</title>
                                 <rect
                                     width={width}
                                     height={height}
@@ -133,7 +152,10 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 />
                                 {showLabel ? (
                                     <text x="4" y="14" fill="#ffffff" fontSize="11" pointerEvents="none">
-                                        {label}
+                                        {showNameLabel ? (
+                                            <tspan x="4" dy="0">{fileName}</tspan>
+                                        ) : null}
+                                        <tspan x="4" dy={showNameLabel ? '1.2em' : '0'}>{label}</tspan>
                                     </text>
                                 ) : null}
                             </g>
