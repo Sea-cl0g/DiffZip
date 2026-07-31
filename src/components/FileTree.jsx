@@ -1,6 +1,6 @@
 import React from 'react';
 import { ProductOutlined, BarsOutlined, DownOutlined } from '@ant-design/icons';
-import { Tree, Tabs, Dropdown, Space, Flex } from 'antd';
+import { Tree, Tabs, Select, Flex } from 'antd';
 
 const dropdownItems = [
     {
@@ -16,6 +16,10 @@ const dropdownItems = [
 export default function FileTree({ treeData, onSelect }) {
     const onChange = key => {
         console.log(key);
+    };
+
+    const handleSelectChange = value => {
+        console.log('selected', value);
     };
 
     const tabItems = [
@@ -43,24 +47,21 @@ export default function FileTree({ treeData, onSelect }) {
         }
     ];
 
-
-    const handleButtonClick = e => {
-        console.log('click', e);
-    };
-    const menuProps = {
-        items: dropdownItems,
-        onClick: handleButtonClick,
-    };
+    const selectOptions = dropdownItems.map(item => ({
+        value: item.key,
+        label: item.label,
+    }));
 
     return (
         <>
-            <Flex gap="medium" align="end" vertical>
-                <Dropdown menu={menuProps}>
-                    <Space>
-                        Hover me
-                        <DownOutlined />
-                    </Space>
-                </Dropdown>
+            <Flex gap="medium" align="center" justify="flex-end">
+                <p style={{ margin: 0 }}>選択:</p>
+                <Select
+                    defaultValue="1"
+                    style={{ width: 160 }}
+                    onChange={handleSelectChange}
+                    options={selectOptions}
+                />
 
             </Flex>
             <Tabs defaultActiveKey="1" items={tabItems} onChange={onChange} />
