@@ -1,4 +1,5 @@
 import React, { Children } from 'react';
+import { ProductOutlined, BarsOutlined } from '@ant-design/icons';
 import { Tree, Tabs } from 'antd';
 
 export default function FileTree({ treeData, onSelect }) {
@@ -10,11 +11,13 @@ export default function FileTree({ treeData, onSelect }) {
         {
             key: '1',
             label: 'ツリー表示',
+            icon: <ProductOutlined />,
             children: <p>a</p>
         },
         {
             key: '2',
             label: 'ファイル表示',
+            icon: <BarsOutlined />,
             children: <Tree
                 showLine
                 defaultExpandAll={true}
