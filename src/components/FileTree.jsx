@@ -1,25 +1,31 @@
 import React from 'react';
-import { ProductOutlined, BarsOutlined, DownOutlined } from '@ant-design/icons';
+import { ProductOutlined, BarsOutlined } from '@ant-design/icons';
 import { Tree, Tabs, Select, Flex } from 'antd';
 
 const dropdownItems = [
     {
-        label: '1st menu item',
-        key: '1'
+        label: '差分',
+        key: 'diff'
     },
     {
-        label: '2nd menu item',
-        key: '2'
-    }
+        label: '変更前のzip',
+        key: 'left'
+    },
+    {
+        label: '変更後のzip',
+        key: 'right'
+    },
 ];
 
-export default function FileTree({ treeData, onSelect }) {
+export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTreeModeChange }) {
     const onChange = key => {
         console.log(key);
     };
 
     const handleSelectChange = value => {
-        console.log('selected', value);
+        if (typeof onTreeModeChange === 'function') {
+            onTreeModeChange(value);
+        }
     };
 
     const tabItems = [
@@ -57,7 +63,7 @@ export default function FileTree({ treeData, onSelect }) {
             <Flex gap="medium" align="center" justify="flex-end">
                 <p style={{ margin: 0 }}>選択:</p>
                 <Select
-                    defaultValue="1"
+                    value={treeMode}
                     style={{ width: 160 }}
                     onChange={handleSelectChange}
                     options={selectOptions}

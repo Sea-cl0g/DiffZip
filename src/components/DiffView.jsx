@@ -9,6 +9,12 @@ import { buildTreeData } from '../utils/treeBuilder';
 import DiffImage from './DiffImage';
 import Tree from './FileTree';
 
+const TREE_MODE = {
+    DIFF: 'diff',
+    LEFT: 'left',
+    RIGHT: 'right',
+};
+
 const IMAGE_EXTENSION_TO_MIME = {
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
@@ -36,6 +42,8 @@ function getImageMimeTypeFromPath(path) {
 
 export default function DiffView({ files }) {
     const [treeData, setTreeData] = useState([]);
+    const [diffMetadata, setDiffMetadata] = useState(null);
+    const [treeMode, setTreeMode] = useState(TREE_MODE.DIFF);
     const [isTreeReady, setIsTreeReady] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [diffHtml, setDiffHtml] = useState('');
@@ -63,22 +71,32 @@ export default function DiffView({ files }) {
         const afterZip = files?.file2;
 
         if (!beforeZip || !afterZip) {
+            setTreeData([]);
+            setDiffMetadata(null);
+            setTreeMode(TREE_MODE.DIFF);
+            setIsTreeReady(false);
+            setSelectedFile(null);
             return;
         }
 
         let cancelled = false;
+        setIsTreeReady(false);
+        setDiffMetadata(null);
+        setSelectedFile(null);
 
         (async () => {
             try {
                 const result = await buildZipDiffMetadata(beforeZip, afterZip);
                 if (!cancelled) {
-                    const tree = buildTreeData(result, { mode: 'diff' });
-                    setTreeData(tree);
+                    setDiffMetadata(result);
+                    setTreeMode(TREE_MODE.DIFF);
                     setIsTreeReady(true);
                 }
             } catch (e) {
                 console.error('Failed to build diff metadata:', e);
                 if (!cancelled) {
+                    setTreeData([]);
+                    setDiffMetadata(null);
                     setIsTreeReady(true);
                 }
             }
@@ -90,6 +108,16 @@ export default function DiffView({ files }) {
     }, [files?.file1, files?.file2]);
 
     useEffect(() => {
+        if (!diffMetadata) {
+            setTreeData([]);
+            return;
+        }
+
+        setTreeData(buildTreeData(diffMetadata, { mode: treeMode }));
+        setSelectedFile(null);
+    }, [treeMode, diffMetadata]);
+
+    useEffect(() => {
         if (!selectedFile) {
             revokeImageBlobUrls();
             setDiffHtml('');
@@ -98,7 +126,7 @@ export default function DiffView({ files }) {
         }
 
         const displayPath = selectedFile.path;
-        const status = selectedFile.status;
+        const status = selectedFile.status || (treeMode === TREE_MODE.LEFT ? 'deleted' : treeMode === TREE_MODE.RIGHT ? 'added' : null);
         const beforeZipPath = selectedFile.left?.zipPath;
         const afterZipPath = selectedFile.right?.zipPath;
         const imageMimeType = getImageMimeTypeFromPath(afterZipPath || beforeZipPath || displayPath);
@@ -190,7 +218,11 @@ export default function DiffView({ files }) {
             cancelled = true;
             revokeImageBlobUrls();
         };
-    }, [selectedFile, files?.file1, files?.file2, revokeImageBlobUrls]);
+    }, [selectedFile, treeMode, files?.file1, files?.file2, revokeImageBlobUrls]);
+
+    function handleTreeModeChange(nextMode) {
+        setTreeMode(nextMode);
+    }
 
     function handleTreeSelect(_, { node }) {
         if (node.data !== null && node.data !== undefined) {
@@ -202,13 +234,15 @@ export default function DiffView({ files }) {
 
     return (
         <div style={{ height: '100%', minHeight: 0 }}>
-            <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', backgroundColor:'#ffffff' }}>
+            <Splitter style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', backgroundColor: '#ffffff' }}>
                 <Splitter.Panel defaultSize="20%" min="20%" max="70%">
                     <div className="diff-panel">
                         {isTreeReady ? (
                             <Tree
                                 treeData={treeData}
                                 onSelect={handleTreeSelect}
+                                treeMode={treeMode}
+                                onTreeModeChange={handleTreeModeChange}
                             />
                         ) : <></>}
                     </div>
