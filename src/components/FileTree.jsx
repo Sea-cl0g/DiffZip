@@ -20,11 +20,11 @@ const comparisonTargetOptions = [
 
 const treeViewModeOptions = [
     {
-        label: '差分',
+        label: '変更量',
         value: 'sub'
     },
     {
-        label: 'フル',
+        label: '実サイズ',
         value: 'full'
     }
 ];
