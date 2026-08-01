@@ -40,6 +40,34 @@ function getImageMimeTypeFromPath(path) {
     return null;
 }
 
+function escapeHtml(text) {
+        return String(text || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+}
+
+function buildPlainFileHtml(filePath, fileText) {
+        const safePath = escapeHtml(filePath);
+        const safeText = escapeHtml(fileText);
+
+        return `
+        <div class="d2h-wrapper">
+            <div class="d2h-file-wrapper">
+                <div class="d2h-file-header">
+                    <span class="d2h-file-name-wrapper">
+                        <span class="d2h-file-name">${safePath}</span>
+                    </span>
+                </div>
+                <div class="d2h-file-diff">
+                    <pre style="margin:0;padding:12px;white-space:pre;overflow:auto;">${safeText}</pre>
+                </div>
+            </div>
+        </div>`;
+}
+
 export default function DiffView({ files }) {
     const [treeData, setTreeData] = useState([]);
     const [diffMetadata, setDiffMetadata] = useState(null);
@@ -174,6 +202,26 @@ export default function DiffView({ files }) {
 
                 if (!cancelled) {
                     setImageCompareUrls(null);
+                }
+
+                if (treeMode === TREE_MODE.LEFT || treeMode === TREE_MODE.RIGHT) {
+                    const targetZipFile = treeMode === TREE_MODE.LEFT ? files.file1 : files.file2;
+                    const targetZipPath = treeMode === TREE_MODE.LEFT ? beforeZipPath : afterZipPath;
+                    let fileText = '';
+
+                    if (targetZipFile && targetZipPath) {
+                        const targetZipInfo = await unzip(targetZipFile);
+                        const targetEntry = targetZipInfo.entries[targetZipPath];
+                        if (targetEntry) {
+                            fileText = await targetEntry.text();
+                        }
+                    }
+
+                    if (!cancelled) {
+                        setDiffHtml(buildPlainFileHtml(displayPath, fileText));
+                    }
+
+                    return;
                 }
 
                 let beforeText = '';
