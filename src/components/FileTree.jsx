@@ -91,7 +91,7 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
                         size="small"
                     />
                 </Flex>
-                {treeMode === "diff" ? <Flex gap="small" align="center">
+                {treeMode === "diff" && activeTab === "1" ? <Flex gap="small" align="center">
                     <Select
                         value={treeView}
                         style={{ width: 100 }}
