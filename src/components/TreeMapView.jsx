@@ -11,6 +11,89 @@ const STATUS_COLORS = {
     default: '#4f6d7a',
 };
 
+const FIXED_EXTENSION_COLORS = [
+    '#1f77b4',
+    '#ff7f0e',
+    '#2ca02c',
+    '#d62728',
+    '#9467bd',
+    '#17becf',
+    '#8c564b',
+    '#e377c2',
+];
+
+function getExtensionFromPath(path) {
+    const fileName = String(path || '').split('/').pop() || '';
+    const lastDotIndex = fileName.lastIndexOf('.');
+
+    if (lastDotIndex <= 0 || lastDotIndex === fileName.length - 1) {
+        return '(no ext)';
+    }
+
+    return fileName.slice(lastDotIndex).toLowerCase();
+}
+
+function hashToColor(text) {
+    let hash = 0;
+    for (let i = 0; i < text.length; i += 1) {
+        hash = ((hash << 5) - hash) + text.charCodeAt(i);
+        hash |= 0;
+    }
+
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 65%, 52%)`;
+}
+
+function collectFileNodes(sourceNode, out = []) {
+    if (!sourceNode || typeof sourceNode !== 'object') {
+        return out;
+    }
+
+    const children = Array.isArray(sourceNode.children) ? sourceNode.children : [];
+    if (children.length === 0) {
+        if (sourceNode.isFile) {
+            out.push(sourceNode);
+        }
+        return out;
+    }
+
+    children.forEach((child) => collectFileNodes(child, out));
+    return out;
+}
+
+function filterTreemapSourceByExtensions(sourceNode, hiddenExtensions) {
+    if (!sourceNode || typeof sourceNode !== 'object') {
+        return null;
+    }
+
+    const children = Array.isArray(sourceNode.children) ? sourceNode.children : [];
+    if (children.length === 0) {
+        if (!sourceNode.isFile) {
+            return null;
+        }
+
+        const extension = getExtensionFromPath(sourceNode.path);
+        if (hiddenExtensions.has(extension)) {
+            return null;
+        }
+
+        return { ...sourceNode };
+    }
+
+    const filteredChildren = children
+        .map((child) => filterTreemapSourceByExtensions(child, hiddenExtensions))
+        .filter(Boolean);
+
+    if (filteredChildren.length === 0) {
+        return null;
+    }
+
+    return {
+        ...sourceNode,
+        children: filteredChildren,
+    };
+}
+
 function formatSize(size) {
     const safeSize = Number.isFinite(size) ? size : 0;
     if (safeSize < 1024) {
@@ -62,6 +145,7 @@ function pickNodeColor(nodeData, treeView) {
 export default function TreeMapView({ treeData, treeMode, treeView, layoutVersion = 0, onSelect }) {
     const containerRef = useRef(null);
     const [size, setSize] = useState({ width: 0, height: 0 });
+    const [hiddenExtensions, setHiddenExtensions] = useState(() => new Set());
 
     useEffect(() => {
         const element = containerRef.current;
@@ -70,14 +154,32 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         }
 
         const rect = element.getBoundingClientRect();
+        const heightTmp = window.innerHeight //後で直す
+        console.log(rect)
         setSize({
             width: Math.max(0, Math.floor(rect.width)),
-            height: Math.max(0, Math.floor(rect.height)),
+            height: heightTmp * 1 / 2,
         });
     }, [layoutVersion, treeData, treeMode, treeView]);
 
-    const leaves = useMemo(() => {
+    const treemapSource = useMemo(() => {
         if (!Array.isArray(treeData) || treeData.length === 0) {
+            return null;
+        }
+
+        return buildTreemapHierarchyData(treeData, { mode: treeMode, treeView });
+    }, [treeData, treeMode, treeView]);
+
+    const allFileNodes = useMemo(() => {
+        if (!treemapSource) {
+            return [];
+        }
+
+        return collectFileNodes(treemapSource, []);
+    }, [treemapSource]);
+
+    const preparedLeaves = useMemo(() => {
+        if (!treemapSource) {
             return [];
         }
 
@@ -85,8 +187,12 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
             return [];
         }
 
-        const source = buildTreemapHierarchyData(treeData, { mode: treeMode, treeView });
-        const root = hierarchy(source)
+        const filteredSource = filterTreemapSourceByExtensions(treemapSource, hiddenExtensions);
+        if (!filteredSource) {
+            return [];
+        }
+
+        const root = hierarchy(filteredSource)
             .sum((node) => {
                 if (!node.isFile) {
                     return 0;
@@ -105,8 +211,74 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         return root
             .leaves()
             .filter((leaf) => leaf.data?.isFile)
-            .filter((leaf) => (leaf.x1 - leaf.x0) > 0 && (leaf.y1 - leaf.y0) > 0);
-    }, [treeData, treeMode, treeView, size.width, size.height]);
+            .filter((leaf) => (leaf.x1 - leaf.x0) > 0 && (leaf.y1 - leaf.y0) > 0)
+            .map((leaf) => {
+                const extension = getExtensionFromPath(leaf.data?.path);
+                return {
+                    leaf,
+                    extension,
+                };
+            });
+    }, [treemapSource, hiddenExtensions, size.width, size.height]);
+
+    useEffect(() => {
+        const availableExtensions = new Set(allFileNodes.map((node) => getExtensionFromPath(node.path)));
+        setHiddenExtensions((prev) => {
+            const next = new Set([...prev].filter((ext) => availableExtensions.has(ext)));
+            if (next.size === prev.size) {
+                return prev;
+            }
+            return next;
+        });
+    }, [allFileNodes]);
+
+    const extensionColorMap = useMemo(() => {
+        const extensions = [...new Set(allFileNodes.map((node) => getExtensionFromPath(node.path)))]
+            .sort((a, b) => a.localeCompare(b));
+
+        const map = new Map();
+        extensions.forEach((extension, index) => {
+            if (index < FIXED_EXTENSION_COLORS.length) {
+                map.set(extension, FIXED_EXTENSION_COLORS[index]);
+            } else {
+                map.set(extension, hashToColor(extension));
+            }
+        });
+
+        return map;
+    }, [allFileNodes]);
+
+    const extensionLegend = useMemo(() => {
+        const stats = new Map();
+
+        allFileNodes.forEach((node) => {
+            const extension = getExtensionFromPath(node.path);
+            const baseSize = Number.isFinite(node.baseSize) ? node.baseSize : 0;
+            stats.set(extension, (stats.get(extension) || 0) + baseSize);
+        });
+
+        return [...stats.entries()]
+            .map(([extension, totalSize]) => ({
+                extension,
+                totalSize,
+                color: extensionColorMap.get(extension) || STATUS_COLORS.default,
+            }))
+            .sort((a, b) => b.totalSize - a.totalSize);
+    }, [allFileNodes, extensionColorMap]);
+
+    const leaves = preparedLeaves;
+
+    const toggleExtension = (extension) => {
+        setHiddenExtensions((prev) => {
+            const next = new Set(prev);
+            if (next.has(extension)) {
+                next.delete(extension);
+            } else {
+                next.add(extension);
+            }
+            return next;
+        });
+    };
 
     const handleLeafClick = (leaf) => {
         if (typeof onSelect !== 'function') {
@@ -128,11 +300,13 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                 </div>
             ) : (
                 <svg className="treemap-svg" width={size.width} height={size.height} role="img" aria-label="TreeMap">
-                    {leaves.map((leaf) => {
+                    {leaves.map(({ leaf, extension }) => {
                         const width = Math.max(0, leaf.x1 - leaf.x0);
                         const height = Math.max(0, leaf.y1 - leaf.y0);
                         const data = leaf.data;
-                        const color = pickNodeColor(data, treeView);
+                        const color = treeMode === 'left' || treeMode === 'right'
+                            ? (extensionColorMap.get(extension) || STATUS_COLORS.default)
+                            : pickNodeColor(data, treeView);
                         const showLabel = width >= 90 && height >= 28;
                         const showNameLabel = width >= 90 && height >= 42;
                         const label = formatLabel(data, treeView);
@@ -163,6 +337,26 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                     })}
                 </svg>
             )}
+
+            {extensionLegend.length > 0 ? (
+                <div className="treemap-legend" aria-label="TreeMap extension legend">
+                    {extensionLegend.map((item) => {
+                        const isHidden = hiddenExtensions.has(item.extension);
+                        return (
+                            <button
+                                key={item.extension}
+                                type="button"
+                                className={`treemap-legend-item${isHidden ? ' is-hidden' : ''}`}
+                                onClick={() => toggleExtension(item.extension)}
+                                title={`${item.extension} (${formatSize(item.totalSize)})`}
+                            >
+                                <span className="treemap-legend-swatch" style={{ backgroundColor: item.color }} aria-hidden="true" />
+                                <span className="treemap-legend-label">{item.extension}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            ) : null}
         </div>
     );
 }

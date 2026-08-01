@@ -64,6 +64,7 @@ function toTreeSourceEntry(path, meta) {
         path,
         type: 'file',
         size: Number.isFinite(meta?.size) ? meta.size : 0,
+        zipPath: meta?.zipPath || path,
     };
 }
 
