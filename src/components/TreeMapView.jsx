@@ -44,6 +44,56 @@ function hashToColor(text) {
     return `hsl(${hue}, 65%, 52%)`;
 }
 
+function collectFileNodes(sourceNode, out = []) {
+    if (!sourceNode || typeof sourceNode !== 'object') {
+        return out;
+    }
+
+    const children = Array.isArray(sourceNode.children) ? sourceNode.children : [];
+    if (children.length === 0) {
+        if (sourceNode.isFile) {
+            out.push(sourceNode);
+        }
+        return out;
+    }
+
+    children.forEach((child) => collectFileNodes(child, out));
+    return out;
+}
+
+function filterTreemapSourceByExtensions(sourceNode, hiddenExtensions) {
+    if (!sourceNode || typeof sourceNode !== 'object') {
+        return null;
+    }
+
+    const children = Array.isArray(sourceNode.children) ? sourceNode.children : [];
+    if (children.length === 0) {
+        if (!sourceNode.isFile) {
+            return null;
+        }
+
+        const extension = getExtensionFromPath(sourceNode.path);
+        if (hiddenExtensions.has(extension)) {
+            return null;
+        }
+
+        return { ...sourceNode };
+    }
+
+    const filteredChildren = children
+        .map((child) => filterTreemapSourceByExtensions(child, hiddenExtensions))
+        .filter(Boolean);
+
+    if (filteredChildren.length === 0) {
+        return null;
+    }
+
+    return {
+        ...sourceNode,
+        children: filteredChildren,
+    };
+}
+
 function formatSize(size) {
     const safeSize = Number.isFinite(size) ? size : 0;
     if (safeSize < 1024) {
@@ -110,8 +160,24 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         });
     }, [layoutVersion, treeData, treeMode, treeView]);
 
-    const preparedLeaves = useMemo(() => {
+    const treemapSource = useMemo(() => {
         if (!Array.isArray(treeData) || treeData.length === 0) {
+            return null;
+        }
+
+        return buildTreemapHierarchyData(treeData, { mode: treeMode, treeView });
+    }, [treeData, treeMode, treeView]);
+
+    const allFileNodes = useMemo(() => {
+        if (!treemapSource) {
+            return [];
+        }
+
+        return collectFileNodes(treemapSource, []);
+    }, [treemapSource]);
+
+    const preparedLeaves = useMemo(() => {
+        if (!treemapSource) {
             return [];
         }
 
@@ -119,8 +185,12 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
             return [];
         }
 
-        const source = buildTreemapHierarchyData(treeData, { mode: treeMode, treeView });
-        const root = hierarchy(source)
+        const filteredSource = filterTreemapSourceByExtensions(treemapSource, hiddenExtensions);
+        if (!filteredSource) {
+            return [];
+        }
+
+        const root = hierarchy(filteredSource)
             .sum((node) => {
                 if (!node.isFile) {
                     return 0;
@@ -147,10 +217,21 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                     extension,
                 };
             });
-    }, [treeData, treeMode, treeView, size.width, size.height]);
+    }, [treemapSource, hiddenExtensions, size.width, size.height]);
+
+    useEffect(() => {
+        const availableExtensions = new Set(allFileNodes.map((node) => getExtensionFromPath(node.path)));
+        setHiddenExtensions((prev) => {
+            const next = new Set([...prev].filter((ext) => availableExtensions.has(ext)));
+            if (next.size === prev.size) {
+                return prev;
+            }
+            return next;
+        });
+    }, [allFileNodes]);
 
     const extensionColorMap = useMemo(() => {
-        const extensions = [...new Set(preparedLeaves.map((item) => item.extension))]
+        const extensions = [...new Set(allFileNodes.map((node) => getExtensionFromPath(node.path)))]
             .sort((a, b) => a.localeCompare(b));
 
         const map = new Map();
@@ -163,13 +244,14 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         });
 
         return map;
-    }, [preparedLeaves]);
+    }, [allFileNodes]);
 
     const extensionLegend = useMemo(() => {
         const stats = new Map();
 
-        preparedLeaves.forEach(({ leaf, extension }) => {
-            const baseSize = Number.isFinite(leaf.data?.baseSize) ? leaf.data.baseSize : 0;
+        allFileNodes.forEach((node) => {
+            const extension = getExtensionFromPath(node.path);
+            const baseSize = Number.isFinite(node.baseSize) ? node.baseSize : 0;
             stats.set(extension, (stats.get(extension) || 0) + baseSize);
         });
 
@@ -180,12 +262,9 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                 color: extensionColorMap.get(extension) || STATUS_COLORS.default,
             }))
             .sort((a, b) => b.totalSize - a.totalSize);
-    }, [preparedLeaves, extensionColorMap]);
+    }, [allFileNodes, extensionColorMap]);
 
-    const leaves = useMemo(() => {
-        return preparedLeaves
-            .filter(({ extension }) => !hiddenExtensions.has(extension));
-    }, [preparedLeaves, hiddenExtensions]);
+    const leaves = preparedLeaves;
 
     const toggleExtension = (extension) => {
         setHiddenExtensions((prev) => {
