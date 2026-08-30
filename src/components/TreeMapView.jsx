@@ -37,12 +37,20 @@ const CHANGE_CATEGORY_ORDER = ['added', 'increase', 'decrease', 'deleted', 'unsi
 const FIXED_EXTENSION_COLORS = [
     '#1f77b4',
     '#ff7f0e',
-    '#2ca02c',
-    '#d62728',
     '#9467bd',
     '#17becf',
     '#8c564b',
     '#e377c2',
+    '#00a6d6',
+    '#6a3d9a',
+    '#7570b3',
+    '#e6ab02',
+    '#003f8c',
+    '#2f5aa8',
+    '#4a78c2',
+    '#5b3c9e',
+    '#7b52ab',
+    '#a06fc7',
 ];
 
 function getExtensionFromPath(path) {
@@ -151,6 +159,15 @@ function formatTileLabel(nodeData) {
     return `[${category}] ${sizeText}(${formatDelta(delta)})`;
 }
 
+function buildExtensionSummary(extension, fileNodes) {
+    const totalSize = fileNodes.reduce(
+        (sum, node) => sum + (Number.isFinite(node.baseSize) ? node.baseSize : 0),
+        0,
+    );
+
+    return `${extension}\n${fileNodes.length}ファイル(${formatSize(totalSize)})`;
+}
+
 function getChangeLevel(rateAbs) {
     for (let i = 0; i < CHANGE_RATE_THRESHOLDS.length; i += 1) {
         if (rateAbs < CHANGE_RATE_THRESHOLDS[i]) {
@@ -245,7 +262,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         console.log(rect)
         setSize({
             width: Math.max(0, Math.floor(rect.width)),
-            height: heightTmp * 1 / 2,
+            height: heightTmp * 3 / 5,
         });
     }, [layoutVersion, treeData, treeMode, treeView]);
 
@@ -347,7 +364,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
     }, [allFileNodes]);
 
     const extensionLegend = useMemo(() => {
-        const stats = new Map();
+        const filesByExtension = new Map();
 
         allFileNodes.forEach((node) => {
             if (hiddenStatuses.has(getChangeCategory(node))) {
@@ -355,18 +372,29 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
             }
 
             const extension = getExtensionFromPath(node.path);
-            const baseSize = Number.isFinite(node.baseSize) ? node.baseSize : 0;
-            stats.set(extension, (stats.get(extension) || 0) + baseSize);
+            if (!filesByExtension.has(extension)) {
+                filesByExtension.set(extension, []);
+            }
+            filesByExtension.get(extension).push(node);
         });
 
-        return [...stats.entries()]
-            .map(([extension, totalSize]) => ({
+        return [...filesByExtension.entries()]
+            .map(([extension, fileNodes]) => ({
                 extension,
-                totalSize,
+                totalSize: fileNodes.reduce(
+                    (sum, node) => sum + (Number.isFinite(node.baseSize) ? node.baseSize : 0),
+                    0,
+                ),
                 color: extensionColorMap.get(extension) || STATUS_COLORS.default,
+                summary: buildExtensionSummary(extension, fileNodes),
             }))
             .sort((a, b) => b.totalSize - a.totalSize);
     }, [allFileNodes, extensionColorMap, hiddenStatuses]);
+
+    const extensionSummaryMap = useMemo(
+        () => new Map(extensionLegend.map((item) => [item.extension, item.summary])),
+        [extensionLegend],
+    );
 
     const statusLegend = useMemo(() => {
         const visibleForCount = allFileNodes.filter(
@@ -450,8 +478,9 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 fill={extensionColorMap.get(extension) || STATUS_COLORS.default}
                                 stroke="none"
                                 strokeWidth="0"
-                                pointerEvents="none"
-                            />
+                            >
+                                <title>{extensionSummaryMap.get(extension)}</title>
+                            </rect>
                         );
                     })}
                     {leaves.map(({ leaf }) => {
@@ -535,7 +564,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 type="button"
                                 className={`treemap-legend-item${isHidden ? ' is-hidden' : ''}`}
                                 onClick={() => toggleExtension(item.extension)}
-                                title={`${item.extension} (${formatSize(item.totalSize)})`}
+                                title={item.summary}
                             >
                                 <span className="treemap-legend-swatch treemap-legend-swatch--line" style={{ backgroundColor: item.color }} aria-hidden="true" />
                                 <span className="treemap-legend-label">{item.extension}</span>
@@ -555,10 +584,10 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 type="button"
                                 className={`treemap-legend-item${isHidden ? ' is-hidden' : ''}`}
                                 onClick={() => toggleStatus(item.status)}
-                                title={`${item.label} (${item.count}件)`}
+                                title={`${item.label} (${item.count}ファイル)`}
                             >
                                 <span className="treemap-legend-swatch" style={item.swatchStyle} aria-hidden="true" />
-                                <span className="treemap-legend-label">{`${item.label} (${item.count}件)`}</span>
+                                <span className="treemap-legend-label">{`${item.label} (${item.count}ファイル)`}</span>
                             </button>
                         );
                     })}
