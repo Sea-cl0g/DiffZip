@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Typography } from 'antd';
 import { hierarchy, treemap } from 'd3-hierarchy';
 import { buildTreemapHierarchyData } from '../utils/treeBuilder';

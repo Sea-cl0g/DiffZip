@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { InboxOutlined } from '@ant-design/icons';
 import { Result, Splitter, Upload, message } from 'antd';
 import { unzip } from 'unzipit';

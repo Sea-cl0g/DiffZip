@@ -1,4 +1,3 @@
-import React from 'react';
 import { UploadOutlined } from '@ant-design/icons';
 import { Upload, Button, Select, Flex, Typography, message } from 'antd';
 import { isZipFile } from '../utils/zip/isZipFile';

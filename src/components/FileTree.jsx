@@ -1,4 +1,3 @@
-import React from 'react';
 import { Tree } from 'antd';
 
 export default function FileTree({ treeData, onSelect, selectedKeys }) {
