@@ -4,7 +4,6 @@ import Body from "./components/Body";
 import Footer from "./components/Footer";
 
 export default function App() {
-  const [view, setView] = useState("upload"); // "upload" | "diff"
   const [files, setFiles] = useState({ file1: null, file2: null });
 
   function handleFileChange(key, file) {
@@ -19,13 +18,10 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Header />
       <Body
-        view={view}
         files={files}
         onFileChange={handleFileChange}
       />
-      <Footer />
     </div>
   );
 }
