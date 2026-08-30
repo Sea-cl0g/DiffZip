@@ -358,9 +358,9 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 y={group.y0}
                                 width={width}
                                 height={height}
-                                fill="none"
-                                stroke={extensionColorMap.get(extension) || STATUS_COLORS.default}
-                                strokeWidth="2"
+                                fill={extensionColorMap.get(extension) || STATUS_COLORS.default}
+                                stroke="none"
+                                strokeWidth="0"
                                 pointerEvents="none"
                             />
                         );
