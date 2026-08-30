@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { InboxOutlined } from '@ant-design/icons';
-import { Result, Splitter, Upload, message } from 'antd';
+import { FileZipOutlined, InboxOutlined } from '@ant-design/icons';
+import { Flex, Result, Splitter, Typography, Upload, message } from 'antd';
 import { unzip } from 'unzipit';
 import { createPatch } from 'diff';
 import { html } from 'diff2html';
@@ -16,6 +16,11 @@ const TREE_MODE = {
     DIFF: 'diff',
     LEFT: 'left',
     RIGHT: 'right',
+};
+
+const SAMPLE_ZIP_URLS = {
+    before: 'https://drive.google.com/uc?export=download&id=1X0H9CL0eljnyoDmfDauacPt5uK7DvsHv',
+    after: 'https://drive.google.com/uc?export=download&id=1XUhA4QLzLIf8wGoka2ddFcJdEFCujN_2',
 };
 
 const IMAGE_EXTENSION_TO_MIME = {
@@ -341,6 +346,17 @@ export default function DiffView({ files, onUploadFile }) {
                                         比較するzipファイルを2つ以上アップロードしてください。
                                     </p>
                                 </Upload.Dragger>
+                                <Flex vertical align="center" gap={4} className="sample-code-links">
+                                    <Typography.Text type="secondary">サンプルコードで試す</Typography.Text>
+                                    <Flex gap="middle">
+                                        <Typography.Link href={SAMPLE_ZIP_URLS.before} target="_blank" rel="noopener noreferrer">
+                                            <FileZipOutlined /> 成果物発表会時のソースコード
+                                        </Typography.Link>
+                                        <Typography.Link href={SAMPLE_ZIP_URLS.after} target="_blank" rel="noopener noreferrer">
+                                            <FileZipOutlined /> 合宿後のソースコード
+                                        </Typography.Link>
+                                    </Flex>
+                                </Flex>
                             </div>
                         ) : imageCompareUrls?.before || imageCompareUrls?.after ? (
                             <DiffImage
