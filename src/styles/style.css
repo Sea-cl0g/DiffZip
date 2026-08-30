@@ -102,6 +102,17 @@ header {
   flex: 1;
 }
 
+.treemap-count {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border-top: 1px solid #d8d8d8;
+  background: #fafafa;
+  color: #555;
+  font-size: 12px;
+  line-height: 1;
+  text-align: right;
+}
+
 .treemap-legend {
   display: flex;
   flex-wrap: wrap;

@@ -554,6 +554,8 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                 </svg>
             )}
 
+            <div className="treemap-count" aria-live="polite">{`${leaves.length}ファイルを表示中`}</div>
+
             {extensionLegend.length > 0 ? (
                 <div className="treemap-legend" aria-label="TreeMap extension legend">
                     {extensionLegend.map((item) => {
