@@ -228,7 +228,7 @@ function pickNodeColor(nodeData) {
     }
 }
 
-export default function TreeMapView({ treeData, treeMode, treeView, layoutVersion = 0, onSelect }) {
+export default function TreeMapView({ treeData, treeMode, treeView, layoutVersion = 0, onSelect, selectedFile }) {
     const containerRef = useRef(null);
     const [size, setSize] = useState({ width: 0, height: 0 });
     const [hiddenExtensions, setHiddenExtensions] = useState(() => new Set());
@@ -416,9 +416,13 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
             return;
         }
 
-        onSelect([], {
+        const nodeData = leaf.data.data;
+        const selectedKey = nodeData?.key || leaf.data.path;
+
+        onSelect([selectedKey], {
             node: {
-                data: leaf.data.data,
+                key: selectedKey,
+                data: nodeData,
             },
         });
     };
@@ -455,6 +459,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                         const height = Math.max(0, leaf.y1 - leaf.y0);
                         const data = leaf.data;
                         const color = pickNodeColor(data);
+                        const isSelected = Boolean(selectedFile && (data.path === selectedFile.path || (data.key && data.key === selectedFile.key)));
                         const showLabel = width >= 90 && height >= 28;
                         const showNameLabel = width >= 90 && height >= 42;
                         const label = formatTileLabel(data);
@@ -467,8 +472,8 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                     width={width}
                                     height={height}
                                     fill={color}
-                                    stroke="#ffffff"
-                                    strokeWidth="1"
+                                    stroke={isSelected ? '#1677ff' : '#ffffff'}
+                                    strokeWidth={isSelected ? '2' : '1'}
                                     onClick={() => handleLeafClick(leaf)}
                                     style={{ cursor: 'pointer' }}
                                 />
@@ -479,6 +484,18 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                         ) : null}
                                         <tspan x="4" dy={showNameLabel ? '1.2em' : '0'}>{label}</tspan>
                                     </text>
+                                ) : null}
+                                {isSelected ? (
+                                    <rect
+                                        x={1}
+                                        y={1}
+                                        width={Math.max(0, width - 2)}
+                                        height={Math.max(0, height - 2)}
+                                        fill="none"
+                                        stroke="#1677ff"
+                                        strokeWidth="3"
+                                        pointerEvents="none"
+                                    />
                                 ) : null}
                             </g>
                         );

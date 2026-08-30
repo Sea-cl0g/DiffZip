@@ -110,6 +110,7 @@ export function buildTreeData(input, options = {}) {
                 key,
                 title: name,
                 data: {
+                    key,
                     name,
                     path: currentPath,
                     isFile: item.isFile,
