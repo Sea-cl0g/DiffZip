@@ -44,6 +44,59 @@ body {
   position: static;
 }
 
+.central-empty-state {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.diff-panel--empty-state {
+  display: flex;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.central-uploader.ant-upload-wrapper {
+  width: min(100%, 560px);
+}
+
+.central-uploader .ant-upload-drag {
+  min-height: 280px;
+  padding: 48px 24px;
+}
+
+.central-uploader .ant-upload-drag-icon .anticon {
+  font-size: 56px;
+}
+
+.central-uploader .ant-upload-text {
+  font-size: 20px;
+}
+
+.central-uploader .ant-upload-text span {
+  display: block;
+}
+
+.central-uploader .ant-upload-hint {
+  font-size: 15px;
+}
+
+.central-selection-result.ant-result {
+  max-width: 560px;
+  padding: 48px 24px;
+}
+
+.central-selection-result .ant-result-icon .anticon {
+  font-size: 64px;
+}
+
+.central-selection-result .ant-result-title {
+  font-size: 24px;
+  line-height: 1.4;
+}
+
 header {
   padding: 16px 32px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);

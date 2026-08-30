@@ -1,6 +1,6 @@
 import React from 'react';
 import { InboxOutlined } from '@ant-design/icons';
-import { Divider, Typography, Upload as AntUpload, Layout, Flex } from 'antd';
+import { Divider, Typography, Upload as AntUpload, Layout, Flex, message } from 'antd';
 const { Title } = Typography;
 
 const { Dragger } = AntUpload;
@@ -48,11 +48,21 @@ const panesRowStyle = {
 };
 
 function UploadPane({ title, onFile }) {
+    const [messageApi, contextHolder] = message.useMessage();
+
     const props = {
         name: 'file',
         multiple: false,
         maxCount: 1,
+        accept: '.zip',
         beforeUpload(file) {
+            const isZip = file.type === 'application/zip' ||
+                file.type === 'application/x-zip-compressed' ||
+                file.name.toLowerCase().endsWith('.zip');
+            if (!isZip) {
+                messageApi.error(`${file.name} はzipファイルではありません`);
+                return AntUpload.LIST_IGNORE;
+            }
             onFile(file);
             return false;
         },
@@ -63,6 +73,7 @@ function UploadPane({ title, onFile }) {
 
     return (
         <div className="upload-pane" style={paneInnerStyle}>
+            {contextHolder}
             <Title level={4}>{title}</Title>
             <Dragger {...props} style={draggerStyle}>
                 <p className="ant-upload-drag-icon">
