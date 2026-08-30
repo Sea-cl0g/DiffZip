@@ -144,14 +144,11 @@ function formatDelta(delta) {
     return `${sign}${formatSize(Math.abs(safeDelta))}`;
 }
 
-function formatLabel(nodeData, treeView) {
-    const base = formatSize(nodeData.baseSize);
-    if (treeView !== 'sub') {
-        return base;
-    }
-
+function formatTileLabel(nodeData) {
+    const category = getChangeCategory(nodeData);
+    const sizeText = formatSize(nodeData.baseSize);
     const delta = Number.isFinite(nodeData.delta) ? nodeData.delta : 0;
-    return `${base} (${formatDelta(delta)})`;
+    return `[${category}] ${sizeText}(${formatDelta(delta)})`;
 }
 
 function getChangeLevel(rateAbs) {
@@ -460,7 +457,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                         const color = pickNodeColor(data);
                         const showLabel = width >= 90 && height >= 28;
                         const showNameLabel = width >= 90 && height >= 42;
-                        const label = formatLabel(data, treeView);
+                        const label = formatTileLabel(data);
                         const fileName = data.name || data.path;
 
                         return (
