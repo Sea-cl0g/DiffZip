@@ -350,6 +350,10 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         const stats = new Map();
 
         allFileNodes.forEach((node) => {
+            if (hiddenStatuses.has(getChangeCategory(node))) {
+                return;
+            }
+
             const extension = getExtensionFromPath(node.path);
             const baseSize = Number.isFinite(node.baseSize) ? node.baseSize : 0;
             stats.set(extension, (stats.get(extension) || 0) + baseSize);
@@ -362,7 +366,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                 color: extensionColorMap.get(extension) || STATUS_COLORS.default,
             }))
             .sort((a, b) => b.totalSize - a.totalSize);
-    }, [allFileNodes, extensionColorMap]);
+    }, [allFileNodes, extensionColorMap, hiddenStatuses]);
 
     const statusLegend = useMemo(() => {
         const visibleForCount = allFileNodes.filter(
