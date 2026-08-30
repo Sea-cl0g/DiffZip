@@ -419,8 +419,19 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
 
     const { leaves, groups } = preparedTreemap;
 
-    const toggleExtension = (extension) => {
+    const toggleExtension = (extension, isolate, hideOnly) => {
         setHiddenExtensions((prev) => {
+            if (isolate) {
+                return new Set(
+                    allFileNodes
+                        .map((node) => getExtensionFromPath(node.path))
+                        .filter((availableExtension) => availableExtension !== extension),
+                );
+            }
+            if (hideOnly) {
+                return new Set([extension]);
+            }
+
             const next = new Set(prev);
             if (next.has(extension)) {
                 next.delete(extension);
@@ -431,8 +442,19 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         });
     };
 
-    const toggleStatus = (status) => {
+    const toggleStatus = (status, isolate, hideOnly) => {
         setHiddenStatuses((prev) => {
+            if (isolate) {
+                return new Set(
+                    allFileNodes
+                        .map((node) => getChangeCategory(node))
+                        .filter((availableStatus) => availableStatus !== status),
+                );
+            }
+            if (hideOnly) {
+                return new Set([status]);
+            }
+
             const next = new Set(prev);
             if (next.has(status)) {
                 next.delete(status);
@@ -565,7 +587,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 key={item.extension}
                                 type="button"
                                 className={`treemap-legend-item${isHidden ? ' is-hidden' : ''}`}
-                                onClick={() => toggleExtension(item.extension)}
+                                onClick={(event) => toggleExtension(item.extension, event.ctrlKey, event.shiftKey)}
                                 title={item.summary}
                             >
                                 <span className="treemap-legend-swatch treemap-legend-swatch--line" style={{ backgroundColor: item.color }} aria-hidden="true" />
@@ -585,7 +607,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 key={item.status}
                                 type="button"
                                 className={`treemap-legend-item${isHidden ? ' is-hidden' : ''}`}
-                                onClick={() => toggleStatus(item.status)}
+                                onClick={(event) => toggleStatus(item.status, event.ctrlKey, event.shiftKey)}
                                 title={`${item.label} (${item.count}ファイル)`}
                             >
                                 <span className="treemap-legend-swatch" style={item.swatchStyle} aria-hidden="true" />
