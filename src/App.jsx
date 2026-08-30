@@ -10,6 +10,8 @@ export default function App() {
 
   function handleUploadFile(file) {
     setUploadedFiles(prev => [...prev.filter(f => f.name !== file.name), file]);
+    if(files.file1 == null) return handleFileChange("file1", file);
+    if(files.file2 == null) return handleFileChange("file2", file);
   }
 
   function handleFileChange(key, file) {
