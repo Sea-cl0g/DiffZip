@@ -201,6 +201,9 @@ function toTreemapNode(treeNode, options) {
         }
     }
 
+    // relative change rate vs. pre-change size, used to bucket modified files into color levels
+    const rate = leftSize > 0 ? delta / leftSize : (delta !== 0 ? Math.sign(delta) : 0);
+
     return {
         name: data.name || treeNode?.title || '',
         path: data.path || '',
@@ -209,6 +212,7 @@ function toTreemapNode(treeNode, options) {
         weight: weight > 0 ? weight : 0,
         baseSize,
         delta,
+        rate,
         data,
     };
 }
