@@ -1,12 +1,16 @@
 import React from 'react';
-import Upload from './Upload';
 import Toolbar from './Toolbar';
 import DiffView from './DiffView';
 
-export default function Body({ files, onFileChange }) {
+export default function Body({ uploadedFiles, onUploadFile, files, onFileChange }) {
     return (
         <main className="main-content">
-            <Toolbar />
+            <Toolbar
+                uploadedFiles={uploadedFiles}
+                onUploadFile={onUploadFile}
+                files={files}
+                onFileChange={onFileChange}
+            />
             <DiffView files={files} />
         </main>
     );
