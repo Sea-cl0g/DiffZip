@@ -163,13 +163,17 @@ export async function buildZipDiffMetadata(beforeZipFile, afterZipFile) {
 
         if (metadataChanged(left, right)) {
             changes.push({ path, status: 'modified', type: 'file', size, left, right });
+            continue;
         }
+
+        changes.push({ path, status: 'unchanged', type: 'file', size, left, right });
     }
 
     const summary = {
         added: changes.filter((item) => item.status === 'added').length,
         deleted: changes.filter((item) => item.status === 'deleted').length,
         modified: changes.filter((item) => item.status === 'modified').length,
+        unchanged: changes.filter((item) => item.status === 'unchanged').length,
         totalChanged: changes.length,
     };
 

@@ -4,12 +4,35 @@ import { hierarchy, treemap } from 'd3-hierarchy';
 import { buildTreemapHierarchyData } from '../utils/treeBuilder';
 
 const STATUS_COLORS = {
-    added: '#3aa655',
-    deleted: '#d64545',
-    modified: '#da8b00',
-    unchanged: '#8a8a8a',
     default: '#4f6d7a',
 };
+
+const ADDED_COLOR = '#0a9d3f';
+const DELETED_COLOR = '#e2231a';
+const UNCHANGED_COLOR = '#8a8a8a';
+const UNSIZED_COLOR = '#e0b400';
+
+// gray -> green, mild to strong, 5 buckets for size-increase modified files
+const INCREASE_COLORS = ['#9fc79f', '#7ab97a', '#55ab55', '#2f9d2f', '#0a8f0a'];
+// gray -> red, mild to strong, 5 buckets for size-decrease modified files
+const DECREASE_COLORS = ['#d3a3a3', '#c67d7d', '#b95757', '#ac3232', '#9f0c0c'];
+
+const INCREASE_GRADIENT = `linear-gradient(to right, ${INCREASE_COLORS.join(', ')})`;
+const DECREASE_GRADIENT = `linear-gradient(to right, ${DECREASE_COLORS.join(', ')})`;
+
+const CHANGE_RATE_THRESHOLDS = [0.2, 0.4, 0.6, 0.8];
+
+const CHANGE_CATEGORY_LABELS = {
+    added: '追加',
+    increase: '増加',
+    decrease: '減少',
+    deleted: '削除',
+    unsized: '内容変更',
+    unchanged: '変更なし',
+    default: 'その他',
+};
+
+const CHANGE_CATEGORY_ORDER = ['added', 'increase', 'decrease', 'deleted', 'unsized', 'unchanged', 'default'];
 
 const FIXED_EXTENSION_COLORS = [
     '#1f77b4',
@@ -70,8 +93,8 @@ function buildExtensionGroupedSource(fileNodes, hiddenExtensions, hiddenStatuses
             return;
         }
 
-        const statusKey = node.status || 'default';
-        if (hiddenStatuses.has(statusKey)) {
+        const categoryKey = getChangeCategory(node);
+        if (hiddenStatuses.has(categoryKey)) {
             return;
         }
 
@@ -131,17 +154,81 @@ function formatLabel(nodeData, treeView) {
     return `${base} (${formatDelta(delta)})`;
 }
 
-function pickNodeColor(nodeData, treeView) {
-    if (treeView === 'sub' && Number.isFinite(nodeData.delta)) {
-        if (nodeData.delta > 0) {
-            return STATUS_COLORS.added;
-        }
-        if (nodeData.delta < 0) {
-            return STATUS_COLORS.deleted;
+function getChangeLevel(rateAbs) {
+    for (let i = 0; i < CHANGE_RATE_THRESHOLDS.length; i += 1) {
+        if (rateAbs < CHANGE_RATE_THRESHOLDS[i]) {
+            return i;
         }
     }
+    return CHANGE_RATE_THRESHOLDS.length;
+}
 
-    return STATUS_COLORS[nodeData.status] || STATUS_COLORS.default;
+// derives a display category distinct from the raw diff status (splits modified into increase/decrease/unsized)
+function getChangeCategory(nodeData) {
+    const status = nodeData.status;
+
+    if (status === 'added') {
+        return 'added';
+    }
+    if (status === 'deleted') {
+        return 'deleted';
+    }
+    if (status === 'unchanged') {
+        return 'unchanged';
+    }
+    if (status === 'modified') {
+        const delta = Number.isFinite(nodeData.delta) ? nodeData.delta : 0;
+        if (delta === 0) {
+            return 'unsized';
+        }
+        return delta > 0 ? 'increase' : 'decrease';
+    }
+
+    return 'default';
+}
+
+function getCategorySwatchStyle(categoryKey) {
+    if (categoryKey === 'increase') {
+        return { backgroundImage: INCREASE_GRADIENT };
+    }
+    if (categoryKey === 'decrease') {
+        return { backgroundImage: DECREASE_GRADIENT };
+    }
+
+    const flatColors = {
+        added: ADDED_COLOR,
+        deleted: DELETED_COLOR,
+        unchanged: UNCHANGED_COLOR,
+        unsized: UNSIZED_COLOR,
+        default: STATUS_COLORS.default,
+    };
+
+    return { backgroundColor: flatColors[categoryKey] || STATUS_COLORS.default };
+}
+
+function pickNodeColor(nodeData) {
+    const category = getChangeCategory(nodeData);
+
+    switch (category) {
+        case 'added':
+            return ADDED_COLOR;
+        case 'deleted':
+            return DELETED_COLOR;
+        case 'unchanged':
+            return UNCHANGED_COLOR;
+        case 'unsized':
+            return UNSIZED_COLOR;
+        case 'increase': {
+            const rate = Number.isFinite(nodeData.rate) ? nodeData.rate : 0;
+            return INCREASE_COLORS[getChangeLevel(rate)];
+        }
+        case 'decrease': {
+            const rate = Number.isFinite(nodeData.rate) ? nodeData.rate : 0;
+            return DECREASE_COLORS[getChangeLevel(Math.abs(rate))];
+        }
+        default:
+            return STATUS_COLORS.default;
+    }
 }
 
 export default function TreeMapView({ treeData, treeMode, treeView, layoutVersion = 0, onSelect }) {
@@ -236,7 +323,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
     }, [allFileNodes]);
 
     useEffect(() => {
-        const availableStatuses = new Set(allFileNodes.map((node) => node.status || 'default'));
+        const availableStatuses = new Set(allFileNodes.map((node) => getChangeCategory(node)));
         setHiddenStatuses((prev) => {
             const next = new Set([...prev].filter((status) => availableStatuses.has(status)));
             if (next.size === prev.size) {
@@ -287,16 +374,17 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
 
         const counts = new Map();
         visibleForCount.forEach((node) => {
-            const statusKey = node.status || 'default';
-            counts.set(statusKey, (counts.get(statusKey) || 0) + 1);
+            const categoryKey = getChangeCategory(node);
+            counts.set(categoryKey, (counts.get(categoryKey) || 0) + 1);
         });
 
-        return Object.keys(STATUS_COLORS)
-            .filter((statusKey) => counts.has(statusKey))
-            .map((statusKey) => ({
-                status: statusKey,
-                count: counts.get(statusKey),
-                color: STATUS_COLORS[statusKey],
+        return CHANGE_CATEGORY_ORDER
+            .filter((categoryKey) => counts.has(categoryKey))
+            .map((categoryKey) => ({
+                status: categoryKey,
+                label: CHANGE_CATEGORY_LABELS[categoryKey] || categoryKey,
+                count: counts.get(categoryKey),
+                swatchStyle: getCategorySwatchStyle(categoryKey),
             }));
     }, [allFileNodes, hiddenExtensions]);
 
@@ -369,7 +457,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                         const width = Math.max(0, leaf.x1 - leaf.x0);
                         const height = Math.max(0, leaf.y1 - leaf.y0);
                         const data = leaf.data;
-                        const color = pickNodeColor(data, treeView);
+                        const color = pickNodeColor(data);
                         const showLabel = width >= 90 && height >= 28;
                         const showNameLabel = width >= 90 && height >= 42;
                         const label = formatLabel(data, treeView);
@@ -431,10 +519,10 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 type="button"
                                 className={`treemap-legend-item${isHidden ? ' is-hidden' : ''}`}
                                 onClick={() => toggleStatus(item.status)}
-                                title={`${item.status} (${item.count}件)`}
+                                title={`${item.label} (${item.count}件)`}
                             >
-                                <span className="treemap-legend-swatch" style={{ backgroundColor: item.color }} aria-hidden="true" />
-                                <span className="treemap-legend-label">{`${item.status} (${item.count}件)`}</span>
+                                <span className="treemap-legend-swatch" style={item.swatchStyle} aria-hidden="true" />
+                                <span className="treemap-legend-label">{`${item.label} (${item.count}件)`}</span>
                             </button>
                         );
                     })}
