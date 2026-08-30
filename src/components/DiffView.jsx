@@ -8,6 +8,7 @@ import { buildZipDiffMetadata } from '../utils/zip/diffMetadata';
 import { buildTreeData } from '../utils/treeBuilder';
 import DiffImage from './DiffImage';
 import Tree from './FileTree';
+import TreeMapPanel from './TreeMapPanel';
 
 const TREE_MODE = {
     DIFF: 'diff',
@@ -291,15 +292,12 @@ export default function DiffView({ files }) {
                 onResizeEnd={handleSplitterResizeEnd}
                 style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', backgroundColor: '#ffffff' }}
             >
-                <Splitter.Panel defaultSize="30%" min="30%" max="70%">
+                <Splitter.Panel defaultSize="30%">
                     <div className="diff-panel">
                         {isTreeReady ? (
                             <Tree
                                 treeData={treeData}
                                 onSelect={handleTreeSelect}
-                                treeMode={treeMode}
-                                onTreeModeChange={handleTreeModeChange}
-                                treeLayoutVersion={treeLayoutVersion}
                             />
                         ) : <></>}
                     </div>
@@ -316,6 +314,18 @@ export default function DiffView({ files }) {
                         ) : (
                             <Typography.Text type="secondary">ファイルを選択してください</Typography.Text>
                         )}
+                    </div>
+                </Splitter.Panel>
+                <Splitter.Panel defaultSize="30%">
+                    <div className="diff-panel">
+                        {isTreeReady ? (
+                            <TreeMapPanel
+                                treeData={treeData}
+                                onSelect={handleTreeSelect}
+                                treeMode={treeMode}
+                                treeLayoutVersion={treeLayoutVersion}
+                            />
+                        ) : <></>}
                     </div>
                 </Splitter.Panel>
             </Splitter>

@@ -61,37 +61,39 @@ function collectFileNodes(sourceNode, out = []) {
     return out;
 }
 
-function filterTreemapSourceByExtensions(sourceNode, hiddenExtensions) {
-    if (!sourceNode || typeof sourceNode !== 'object') {
-        return null;
-    }
+function buildExtensionGroupedSource(fileNodes, hiddenExtensions, hiddenStatuses) {
+    const groups = new Map();
 
-    const children = Array.isArray(sourceNode.children) ? sourceNode.children : [];
-    if (children.length === 0) {
-        if (!sourceNode.isFile) {
-            return null;
-        }
-
-        const extension = getExtensionFromPath(sourceNode.path);
+    fileNodes.forEach((node) => {
+        const extension = getExtensionFromPath(node.path);
         if (hiddenExtensions.has(extension)) {
-            return null;
+            return;
         }
 
-        return { ...sourceNode };
-    }
+        const statusKey = node.status || 'default';
+        if (hiddenStatuses.has(statusKey)) {
+            return;
+        }
 
-    const filteredChildren = children
-        .map((child) => filterTreemapSourceByExtensions(child, hiddenExtensions))
-        .filter(Boolean);
+        if (!groups.has(extension)) {
+            groups.set(extension, []);
+        }
+        groups.get(extension).push(node);
+    });
 
-    if (filteredChildren.length === 0) {
+    if (groups.size === 0) {
         return null;
     }
 
-    return {
-        ...sourceNode,
-        children: filteredChildren,
-    };
+    const children = [...groups.entries()].map(([extension, nodes]) => ({
+        name: extension,
+        path: extension,
+        isFile: false,
+        extension,
+        children: nodes,
+    }));
+
+    return { name: 'root', path: '', isFile: false, children };
 }
 
 function formatSize(size) {
@@ -146,6 +148,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
     const containerRef = useRef(null);
     const [size, setSize] = useState({ width: 0, height: 0 });
     const [hiddenExtensions, setHiddenExtensions] = useState(() => new Set());
+    const [hiddenStatuses, setHiddenStatuses] = useState(() => new Set());
 
     useEffect(() => {
         const element = containerRef.current;
@@ -178,21 +181,19 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         return collectFileNodes(treemapSource, []);
     }, [treemapSource]);
 
-    const preparedLeaves = useMemo(() => {
-        if (!treemapSource) {
-            return [];
+    const preparedTreemap = useMemo(() => {
+        const empty = { leaves: [], groups: [] };
+
+        if (allFileNodes.length === 0 || size.width <= 0 || size.height <= 0) {
+            return empty;
         }
 
-        if (size.width <= 0 || size.height <= 0) {
-            return [];
+        const groupedSource = buildExtensionGroupedSource(allFileNodes, hiddenExtensions, hiddenStatuses);
+        if (!groupedSource) {
+            return empty;
         }
 
-        const filteredSource = filterTreemapSourceByExtensions(treemapSource, hiddenExtensions);
-        if (!filteredSource) {
-            return [];
-        }
-
-        const root = hierarchy(filteredSource)
+        const root = hierarchy(groupedSource)
             .sum((node) => {
                 if (!node.isFile) {
                     return 0;
@@ -202,29 +203,42 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
             })
             .sort((a, b) => b.value - a.value);
 
+        // paddingOuter leaves a visible gap for the extension group border
         treemap()
             .size([size.width, size.height])
             .paddingInner(1)
-            .paddingOuter(0)
+            .paddingOuter(6)
             .round(true)(root);
 
-        return root
+        const groups = (root.children || []).filter((group) => (group.x1 - group.x0) > 0 && (group.y1 - group.y0) > 0);
+
+        const leaves = root
             .leaves()
             .filter((leaf) => leaf.data?.isFile)
             .filter((leaf) => (leaf.x1 - leaf.x0) > 0 && (leaf.y1 - leaf.y0) > 0)
-            .map((leaf) => {
-                const extension = getExtensionFromPath(leaf.data?.path);
-                return {
-                    leaf,
-                    extension,
-                };
-            });
-    }, [treemapSource, hiddenExtensions, size.width, size.height]);
+            .map((leaf) => ({
+                leaf,
+                extension: leaf.parent?.data?.extension || getExtensionFromPath(leaf.data?.path),
+            }));
+
+        return { leaves, groups };
+    }, [allFileNodes, hiddenExtensions, hiddenStatuses, size.width, size.height]);
 
     useEffect(() => {
         const availableExtensions = new Set(allFileNodes.map((node) => getExtensionFromPath(node.path)));
         setHiddenExtensions((prev) => {
             const next = new Set([...prev].filter((ext) => availableExtensions.has(ext)));
+            if (next.size === prev.size) {
+                return prev;
+            }
+            return next;
+        });
+    }, [allFileNodes]);
+
+    useEffect(() => {
+        const availableStatuses = new Set(allFileNodes.map((node) => node.status || 'default'));
+        setHiddenStatuses((prev) => {
+            const next = new Set([...prev].filter((status) => availableStatuses.has(status)));
             if (next.size === prev.size) {
                 return prev;
             }
@@ -266,7 +280,27 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
             .sort((a, b) => b.totalSize - a.totalSize);
     }, [allFileNodes, extensionColorMap]);
 
-    const leaves = preparedLeaves;
+    const statusLegend = useMemo(() => {
+        const visibleForCount = allFileNodes.filter(
+            (node) => !hiddenExtensions.has(getExtensionFromPath(node.path)),
+        );
+
+        const counts = new Map();
+        visibleForCount.forEach((node) => {
+            const statusKey = node.status || 'default';
+            counts.set(statusKey, (counts.get(statusKey) || 0) + 1);
+        });
+
+        return Object.keys(STATUS_COLORS)
+            .filter((statusKey) => counts.has(statusKey))
+            .map((statusKey) => ({
+                status: statusKey,
+                count: counts.get(statusKey),
+                color: STATUS_COLORS[statusKey],
+            }));
+    }, [allFileNodes, hiddenExtensions]);
+
+    const { leaves, groups } = preparedTreemap;
 
     const toggleExtension = (extension) => {
         setHiddenExtensions((prev) => {
@@ -275,6 +309,18 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                 next.delete(extension);
             } else {
                 next.add(extension);
+            }
+            return next;
+        });
+    };
+
+    const toggleStatus = (status) => {
+        setHiddenStatuses((prev) => {
+            const next = new Set(prev);
+            if (next.has(status)) {
+                next.delete(status);
+            } else {
+                next.add(status);
             }
             return next;
         });
@@ -300,13 +346,30 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                 </div>
             ) : (
                 <svg className="treemap-svg" width={size.width} height={size.height} role="img" aria-label="TreeMap">
-                    {leaves.map(({ leaf, extension }) => {
+                    {groups.map((group) => {
+                        const width = Math.max(0, group.x1 - group.x0);
+                        const height = Math.max(0, group.y1 - group.y0);
+                        const extension = group.data?.extension;
+
+                        return (
+                            <rect
+                                key={`group-${extension}`}
+                                x={group.x0}
+                                y={group.y0}
+                                width={width}
+                                height={height}
+                                fill={extensionColorMap.get(extension) || STATUS_COLORS.default}
+                                stroke="none"
+                                strokeWidth="0"
+                                pointerEvents="none"
+                            />
+                        );
+                    })}
+                    {leaves.map(({ leaf }) => {
                         const width = Math.max(0, leaf.x1 - leaf.x0);
                         const height = Math.max(0, leaf.y1 - leaf.y0);
                         const data = leaf.data;
-                        const color = treeMode === 'left' || treeMode === 'right'
-                            ? (extensionColorMap.get(extension) || STATUS_COLORS.default)
-                            : pickNodeColor(data, treeView);
+                        const color = pickNodeColor(data, treeView);
                         const showLabel = width >= 90 && height >= 28;
                         const showNameLabel = width >= 90 && height >= 42;
                         const label = formatLabel(data, treeView);
@@ -350,8 +413,28 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 onClick={() => toggleExtension(item.extension)}
                                 title={`${item.extension} (${formatSize(item.totalSize)})`}
                             >
-                                <span className="treemap-legend-swatch" style={{ backgroundColor: item.color }} aria-hidden="true" />
+                                <span className="treemap-legend-swatch treemap-legend-swatch--line" style={{ backgroundColor: item.color }} aria-hidden="true" />
                                 <span className="treemap-legend-label">{item.extension}</span>
+                            </button>
+                        );
+                    })}
+                </div>
+            ) : null}
+
+            {statusLegend.length > 0 ? (
+                <div className="treemap-legend treemap-legend--vertical" aria-label="TreeMap status legend">
+                    {statusLegend.map((item) => {
+                        const isHidden = hiddenStatuses.has(item.status);
+                        return (
+                            <button
+                                key={item.status}
+                                type="button"
+                                className={`treemap-legend-item${isHidden ? ' is-hidden' : ''}`}
+                                onClick={() => toggleStatus(item.status)}
+                                title={`${item.status} (${item.count}件)`}
+                            >
+                                <span className="treemap-legend-swatch" style={{ backgroundColor: item.color }} aria-hidden="true" />
+                                <span className="treemap-legend-label">{`${item.status} (${item.count}件)`}</span>
                             </button>
                         );
                     })}

@@ -132,6 +132,17 @@ header {
   display: inline-block;
 }
 
+.treemap-legend-swatch--line {
+  width: 20px;
+  height: 3px;
+}
+
+.treemap-legend--vertical {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+}
+
 .treemap-legend-label {
   font-size: 12px;
   line-height: 1;
