@@ -480,7 +480,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
     return (
         <div className="treemap-wrapper" ref={containerRef}>
             {leaves.length === 0 ? (
-                <div className="treemap-empty">
+                <div className="treemap-empty" style={{ height: size.height }}>
                     <Typography.Text type="secondary">表示できるデータがありません</Typography.Text>
                 </div>
             ) : (
