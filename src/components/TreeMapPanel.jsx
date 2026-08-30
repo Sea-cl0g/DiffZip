@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Select, Flex } from 'antd';
 import TreeMapView from './TreeMapView';
 

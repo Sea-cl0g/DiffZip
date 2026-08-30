@@ -1,6 +1,6 @@
-import React from 'react';
 import { UploadOutlined } from '@ant-design/icons';
-import { Upload, Button, Select, Flex, Typography } from 'antd';
+import { Upload, Button, Select, Flex, Typography, message } from 'antd';
+import { isZipFile } from '../utils/zip/isZipFile';
 const { Text } = Typography;
 
 function TargetSelect({ label, fileKey, uploadedFiles, selectedFile, onFileChange }) {
@@ -26,42 +26,56 @@ function TargetSelect({ label, fileKey, uploadedFiles, selectedFile, onFileChang
 }
 
 export default function Toolbar({ uploadedFiles = [], onUploadFile, files = {}, onFileChange }) {
+    const [messageApi, contextHolder] = message.useMessage();
     const uploadProps = {
         showUploadList: false,
-        beforeUpload(file) {
+        accept: '.zip',
+        async beforeUpload(file) {
+            if (!await isZipFile(file)) {
+                messageApi.error(`${file.name} は有効なzipファイルではありません`);
+                return Upload.LIST_IGNORE;
+            }
             onUploadFile(file);
             return false;
         },
     };
 
     return (
-        <Flex justify="space-between">
-            <h2
-                onClick={() => window.location.reload()}
-                style={{ cursor: 'pointer', display: 'inline-block', margin: 0 }}
-            >
-                DiffZip
-            </h2>
-            <Flex justify='flex-end' gap="middle" align="flex-end">
-                <Upload {...uploadProps} multiple={true}>
-                    <Button type="primary" icon={<UploadOutlined />}>アップロード</Button>
-                </Upload>
-                <TargetSelect
-                    label="File1"
-                    fileKey="file1"
-                    uploadedFiles={uploadedFiles}
-                    selectedFile={files.file1}
-                    onFileChange={onFileChange}
-                />
-                <TargetSelect
-                    label="File2"
-                    fileKey="file2"
-                    uploadedFiles={uploadedFiles}
-                    selectedFile={files.file2}
-                    onFileChange={onFileChange}
-                />
+        <>
+            {contextHolder}
+            <Flex justify="space-between">
+                <Flex
+                    align="center"
+                    gap="small"
+                    onClick={() => window.location.reload()}
+                    style={{ cursor: 'pointer' }}
+                >
+                    <img src="/favicon.svg" alt="" width={28} height={28} />
+                    <h2 style={{ display: 'inline-block', margin: 0 }}>
+                        DiffZip
+                    </h2>
+                </Flex>
+                <Flex justify='flex-end' gap="middle" align="flex-end">
+                    <Upload {...uploadProps} multiple={true}>
+                        <Button type="primary" icon={<UploadOutlined />}>アップロード</Button>
+                    </Upload>
+                    <TargetSelect
+                        label="File1"
+                        fileKey="file1"
+                        uploadedFiles={uploadedFiles}
+                        selectedFile={files.file1}
+                        onFileChange={onFileChange}
+                    />
+                    <TargetSelect
+                        label="File2"
+                        fileKey="file2"
+                        uploadedFiles={uploadedFiles}
+                        selectedFile={files.file2}
+                        onFileChange={onFileChange}
+                    />
+                </Flex>
             </Flex>
-        </Flex>
+        </>
     );
 }
 

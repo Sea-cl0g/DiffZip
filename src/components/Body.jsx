@@ -1,4 +1,3 @@
-import React from 'react';
 import Toolbar from './Toolbar';
 import DiffView from './DiffView';
 
@@ -11,7 +10,7 @@ export default function Body({ uploadedFiles, onUploadFile, files, onFileChange 
                 files={files}
                 onFileChange={onFileChange}
             />
-            <DiffView files={files} />
+            <DiffView files={files} onUploadFile={onUploadFile} />
         </main>
     );
 }

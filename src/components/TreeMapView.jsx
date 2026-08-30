@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Typography } from 'antd';
 import { hierarchy, treemap } from 'd3-hierarchy';
 import { buildTreemapHierarchyData } from '../utils/treeBuilder';
@@ -381,14 +381,14 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         return [...filesByExtension.entries()]
             .map(([extension, fileNodes]) => ({
                 extension,
-                totalSize: fileNodes.reduce(
-                    (sum, node) => sum + (Number.isFinite(node.baseSize) ? node.baseSize : 0),
+                totalWeight: fileNodes.reduce(
+                    (sum, node) => sum + (Number.isFinite(node.weight) ? node.weight : 0),
                     0,
                 ),
                 color: extensionColorMap.get(extension) || STATUS_COLORS.default,
                 summary: buildExtensionSummary(extension, fileNodes),
             }))
-            .sort((a, b) => b.totalSize - a.totalSize);
+            .sort((a, b) => b.totalWeight - a.totalWeight);
     }, [allFileNodes, extensionColorMap, hiddenStatuses]);
 
     const extensionSummaryMap = useMemo(

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Splitter, Typography } from 'antd';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { FileZipOutlined, InboxOutlined } from '@ant-design/icons';
+import { Flex, Result, Splitter, Typography, Upload, message } from 'antd';
 import { unzip } from 'unzipit';
 import { createPatch } from 'diff';
 import { html } from 'diff2html';
@@ -9,11 +10,17 @@ import { buildTreeData } from '../utils/treeBuilder';
 import DiffImage from './DiffImage';
 import Tree from './FileTree';
 import TreeMapPanel from './TreeMapPanel';
+import { isZipFile } from '../utils/zip/isZipFile';
 
 const TREE_MODE = {
     DIFF: 'diff',
     LEFT: 'left',
     RIGHT: 'right',
+};
+
+const SAMPLE_ZIP_URLS = {
+    before: 'https://drive.google.com/uc?export=download&id=1X0H9CL0eljnyoDmfDauacPt5uK7DvsHv',
+    after: 'https://drive.google.com/uc?export=download&id=1XUhA4QLzLIf8wGoka2ddFcJdEFCujN_2',
 };
 
 const IMAGE_EXTENSION_TO_MIME = {
@@ -69,7 +76,8 @@ function buildPlainFileHtml(filePath, fileText) {
         </div>`;
 }
 
-export default function DiffView({ files }) {
+export default function DiffView({ files, onUploadFile }) {
+    const [messageApi, contextHolder] = message.useMessage();
     const [treeData, setTreeData] = useState([]);
     const [diffMetadata, setDiffMetadata] = useState(null);
     const [treeMode, setTreeMode] = useState(TREE_MODE.DIFF);
@@ -286,9 +294,28 @@ export default function DiffView({ files }) {
         setTreeLayoutVersion((prev) => prev + 1);
     }
 
+    const hasComparisonFiles = Boolean(files?.file1 && files?.file2);
+    const isCentralEmptyState = !hasComparisonFiles
+        || (!imageCompareUrls?.before && !imageCompareUrls?.after && !diffHtml);
+    const uploadProps = {
+        showUploadList: false,
+        multiple: true,
+        accept: '.zip',
+        async beforeUpload(file) {
+            if (!await isZipFile(file)) {
+                messageApi.error(`${file.name} は有効なzipファイルではありません`);
+                return Upload.LIST_IGNORE;
+            }
+            onUploadFile(file);
+            return false;
+        },
+    };
+
     return (
         <div style={{ flex: 1, minHeight: 0 }}>
+            {contextHolder}
             <Splitter
+                className={`diff-splitter${hasComparisonFiles ? '' : ' diff-splitter--awaiting-files'}`}
                 onResizeEnd={handleSplitterResizeEnd}
                 style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', backgroundColor: '#ffffff' }}
             >
@@ -304,8 +331,34 @@ export default function DiffView({ files }) {
                     </div>
                 </Splitter.Panel>
                 <Splitter.Panel>
-                    <div className="diff-panel">
-                        {imageCompareUrls?.before || imageCompareUrls?.after ? (
+                    <div className={`diff-panel${isCentralEmptyState ? ' diff-panel--empty-state' : ''}`}>
+                        {!hasComparisonFiles ? (
+                            <div className="central-empty-state">
+                                <Upload.Dragger {...uploadProps} className="central-uploader">
+                                    <p className="ant-upload-drag-icon">
+                                        <InboxOutlined />
+                                    </p>
+                                    <p className="ant-upload-text">
+                                        <span>クリックまたはドラッグして</span>
+                                        <span>ファイルをアップロード</span>
+                                    </p>
+                                    <p className="ant-upload-hint">
+                                        比較するzipファイルを2つ以上アップロードしてください。
+                                    </p>
+                                </Upload.Dragger>
+                                <Flex vertical align="center" gap={4} className="sample-code-links">
+                                    <Typography.Text type="secondary">サンプルコードで試す</Typography.Text>
+                                    <Flex gap="middle">
+                                        <Typography.Link href={SAMPLE_ZIP_URLS.before} target="_blank" rel="noopener noreferrer">
+                                            <FileZipOutlined /> 成果物発表会時のソースコード
+                                        </Typography.Link>
+                                        <Typography.Link href={SAMPLE_ZIP_URLS.after} target="_blank" rel="noopener noreferrer">
+                                            <FileZipOutlined /> 合宿後のソースコード
+                                        </Typography.Link>
+                                    </Flex>
+                                </Flex>
+                            </div>
+                        ) : imageCompareUrls?.before || imageCompareUrls?.after ? (
                             <DiffImage
                                 beforeUrl={imageCompareUrls?.before}
                                 afterUrl={imageCompareUrls?.after}
@@ -313,7 +366,13 @@ export default function DiffView({ files }) {
                         ) : diffHtml ? (
                             <div dangerouslySetInnerHTML={{ __html: diffHtml }} />
                         ) : (
-                            <Typography.Text type="secondary">ファイルを選択してください</Typography.Text>
+                            <div className="central-empty-state">
+                                <Result
+                                    className="central-selection-result"
+                                    status="info"
+                                    title="ファイルツリーまたはツリーマップをクリックしてください"
+                                />
+                            </div>
                         )}
                     </div>
                 </Splitter.Panel>

@@ -1,4 +1,3 @@
-import React from 'react';
 import 'img-comparison-slider/dist/index.js';
 import 'img-comparison-slider/dist/styles.css';
 
