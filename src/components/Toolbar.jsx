@@ -35,11 +35,17 @@ export default function Toolbar({ uploadedFiles = [], onUploadFile, files = {}, 
     };
 
     return (
-        <Flex justify="space-between" align="center">
-            <Upload {...uploadProps}>
-                <Button icon={<UploadOutlined />}>Click to Upload</Button>
-            </Upload>
-            <Flex gap="middle">
+        <Flex justify="space-between">
+            <h2
+                onClick={() => window.location.reload()}
+                style={{ cursor: 'pointer', display: 'inline-block', margin: 0 }}
+            >
+                DiffZip
+            </h2>
+            <Flex justify='flex-end' gap="middle" align="flex-end">
+                <Upload {...uploadProps}>
+                    <Button type="primary" icon={<UploadOutlined />}>アップロード</Button>
+                </Upload>
                 <TargetSelect
                     label="File1"
                     fileKey="file1"
