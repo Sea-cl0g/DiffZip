@@ -298,6 +298,7 @@ export default function DiffView({ files }) {
                             <Tree
                                 treeData={treeData}
                                 onSelect={handleTreeSelect}
+                                selectedKeys={selectedFile ? [selectedFile.path] : []}
                             />
                         ) : <></>}
                     </div>
@@ -322,6 +323,7 @@ export default function DiffView({ files }) {
                             <TreeMapPanel
                                 treeData={treeData}
                                 onSelect={handleTreeSelect}
+                                selectedFilePath={selectedFile?.path}
                                 treeMode={treeMode}
                                 treeLayoutVersion={treeLayoutVersion}
                             />

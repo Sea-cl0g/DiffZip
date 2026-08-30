@@ -144,14 +144,11 @@ function formatDelta(delta) {
     return `${sign}${formatSize(Math.abs(safeDelta))}`;
 }
 
-function formatLabel(nodeData, treeView) {
-    const base = formatSize(nodeData.baseSize);
-    if (treeView !== 'sub') {
-        return base;
-    }
-
+function formatTileLabel(nodeData) {
+    const category = getChangeCategory(nodeData);
+    const sizeText = formatSize(nodeData.baseSize);
     const delta = Number.isFinite(nodeData.delta) ? nodeData.delta : 0;
-    return `${base} (${formatDelta(delta)})`;
+    return `[${category}] ${sizeText}(${formatDelta(delta)})`;
 }
 
 function getChangeLevel(rateAbs) {
@@ -231,7 +228,7 @@ function pickNodeColor(nodeData) {
     }
 }
 
-export default function TreeMapView({ treeData, treeMode, treeView, layoutVersion = 0, onSelect }) {
+export default function TreeMapView({ treeData, treeMode, treeView, layoutVersion = 0, onSelect, selectedFilePath }) {
     const containerRef = useRef(null);
     const [size, setSize] = useState({ width: 0, height: 0 });
     const [hiddenExtensions, setHiddenExtensions] = useState(() => new Set());
@@ -458,9 +455,10 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                         const height = Math.max(0, leaf.y1 - leaf.y0);
                         const data = leaf.data;
                         const color = pickNodeColor(data);
+                        const isSelected = data.path === selectedFilePath;
                         const showLabel = width >= 90 && height >= 28;
                         const showNameLabel = width >= 90 && height >= 42;
-                        const label = formatLabel(data, treeView);
+                        const label = formatTileLabel(data);
                         const fileName = data.name || data.path;
 
                         return (
@@ -470,8 +468,8 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                     width={width}
                                     height={height}
                                     fill={color}
-                                    stroke="#ffffff"
-                                    strokeWidth="1"
+                                    stroke={isSelected ? '#1677ff' : '#ffffff'}
+                                    strokeWidth={isSelected ? '3' : '1'}
                                     onClick={() => handleLeafClick(leaf)}
                                     style={{ cursor: 'pointer' }}
                                 />
@@ -486,6 +484,40 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                             </g>
                         );
                     })}
+                    {/* 選択中のノードを最前面に重畳描画して枠線が隣接ノードに隠れないようにする */}
+                    {(() => {
+                        const selectedObj = leaves.find(({ leaf }) => leaf.data?.path === selectedFilePath);
+                        if (!selectedObj) return null;
+                        const { leaf } = selectedObj;
+                        const width = Math.max(0, leaf.x1 - leaf.x0);
+                        const height = Math.max(0, leaf.y1 - leaf.y0);
+                        const data = leaf.data;
+                        const color = pickNodeColor(data);
+                        const showLabel = width >= 90 && height >= 28;
+                        const showNameLabel = width >= 90 && height >= 42;
+                        const label = formatTileLabel(data);
+                        const fileName = data.name || data.path;
+
+                        return (
+                            <g transform={`translate(${leaf.x0}, ${leaf.y0})`} style={{ pointerEvents: 'none' }}>
+                                <rect
+                                    width={width}
+                                    height={height}
+                                    fill={color}
+                                    stroke="#1677ff"
+                                    strokeWidth="3"
+                                />
+                                {showLabel ? (
+                                    <text x="4" y="14" fill="#ffffff" fontSize="11">
+                                        {showNameLabel ? (
+                                            <tspan x="4" dy="0">{fileName}</tspan>
+                                        ) : null}
+                                        <tspan x="4" dy={showNameLabel ? '1.2em' : '0'}>{label}</tspan>
+                                    </text>
+                                ) : null}
+                            </g>
+                        );
+                    })()}
                 </svg>
             )}
 

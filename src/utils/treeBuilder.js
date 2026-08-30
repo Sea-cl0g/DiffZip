@@ -53,7 +53,6 @@ export function buildTreeData(input, options = {}) {
     const mode = options.mode || 'diff';
     const sourceItems = getSourceItems(input, mode);
     const root = {};
-    let keyCounter = 0;
 
     for (const item of sourceItems) {
         if (!item?.path) {
@@ -104,10 +103,9 @@ export function buildTreeData(input, options = {}) {
 
         for (const [name, item] of Object.entries(node)) {
             const currentPath = parentPath ? `${parentPath}/${name}` : name;
-            const key = `${++keyCounter}`;
 
             const treeNode = {
-                key,
+                key: currentPath,
                 title: name,
                 data: {
                     name,

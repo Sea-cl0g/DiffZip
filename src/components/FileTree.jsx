@@ -1,12 +1,15 @@
 import React from 'react';
 import { Tree } from 'antd';
 
-export default function FileTree({ treeData, onSelect }) {
+export default function FileTree({ treeData, onSelect, selectedKeys }) {
     return (
         <div className="file-tree-root">
             <Tree
                 showLine
                 defaultExpandAll={true}
+                autoExpandParent={true}
+                selectedKeys={selectedKeys}
+                expandedKeys={selectedKeys}
                 onSelect={onSelect}
                 treeData={treeData}
                 titleRender={(node) => (

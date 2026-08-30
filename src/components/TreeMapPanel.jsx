@@ -13,7 +13,7 @@ const treeViewModeOptions = [
     }
 ];
 
-export default function TreeMapPanel({ treeData, onSelect, treeMode = 'diff', treeLayoutVersion = 0 }) {
+export default function TreeMapPanel({ treeData, onSelect, selectedFilePath, treeMode = 'diff', treeLayoutVersion = 0 }) {
     const [treeView, setTreeView] = useState('sub');
 
     return (
@@ -36,6 +36,7 @@ export default function TreeMapPanel({ treeData, onSelect, treeMode = 'diff', tr
                     treeView={treeView}
                     layoutVersion={treeLayoutVersion}
                     onSelect={onSelect}
+                    selectedFilePath={selectedFilePath}
                 />
             </div>
         </div>
