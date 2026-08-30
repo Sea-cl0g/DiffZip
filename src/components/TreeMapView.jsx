@@ -37,12 +37,20 @@ const CHANGE_CATEGORY_ORDER = ['added', 'increase', 'decrease', 'deleted', 'unsi
 const FIXED_EXTENSION_COLORS = [
     '#1f77b4',
     '#ff7f0e',
-    '#2ca02c',
-    '#d62728',
     '#9467bd',
     '#17becf',
     '#8c564b',
     '#e377c2',
+    '#00a6d6',
+    '#6a3d9a',
+    '#7570b3',
+    '#e6ab02',
+    '#003f8c',
+    '#2f5aa8',
+    '#4a78c2',
+    '#5b3c9e',
+    '#7b52ab',
+    '#a06fc7',
 ];
 
 function getExtensionFromPath(path) {
@@ -151,6 +159,15 @@ function formatTileLabel(nodeData) {
     return `[${category}] ${sizeText}(${formatDelta(delta)})`;
 }
 
+function buildExtensionSummary(extension, fileNodes) {
+    const totalSize = fileNodes.reduce(
+        (sum, node) => sum + (Number.isFinite(node.baseSize) ? node.baseSize : 0),
+        0,
+    );
+
+    return `${extension}\n${fileNodes.length}ファイル(${formatSize(totalSize)})`;
+}
+
 function getChangeLevel(rateAbs) {
     for (let i = 0; i < CHANGE_RATE_THRESHOLDS.length; i += 1) {
         if (rateAbs < CHANGE_RATE_THRESHOLDS[i]) {
@@ -245,7 +262,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         console.log(rect)
         setSize({
             width: Math.max(0, Math.floor(rect.width)),
-            height: heightTmp * 1 / 2,
+            height: heightTmp * 3 / 5,
         });
     }, [layoutVersion, treeData, treeMode, treeView]);
 
@@ -347,22 +364,37 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
     }, [allFileNodes]);
 
     const extensionLegend = useMemo(() => {
-        const stats = new Map();
+        const filesByExtension = new Map();
 
         allFileNodes.forEach((node) => {
+            if (hiddenStatuses.has(getChangeCategory(node))) {
+                return;
+            }
+
             const extension = getExtensionFromPath(node.path);
-            const baseSize = Number.isFinite(node.baseSize) ? node.baseSize : 0;
-            stats.set(extension, (stats.get(extension) || 0) + baseSize);
+            if (!filesByExtension.has(extension)) {
+                filesByExtension.set(extension, []);
+            }
+            filesByExtension.get(extension).push(node);
         });
 
-        return [...stats.entries()]
-            .map(([extension, totalSize]) => ({
+        return [...filesByExtension.entries()]
+            .map(([extension, fileNodes]) => ({
                 extension,
-                totalSize,
+                totalSize: fileNodes.reduce(
+                    (sum, node) => sum + (Number.isFinite(node.baseSize) ? node.baseSize : 0),
+                    0,
+                ),
                 color: extensionColorMap.get(extension) || STATUS_COLORS.default,
+                summary: buildExtensionSummary(extension, fileNodes),
             }))
             .sort((a, b) => b.totalSize - a.totalSize);
-    }, [allFileNodes, extensionColorMap]);
+    }, [allFileNodes, extensionColorMap, hiddenStatuses]);
+
+    const extensionSummaryMap = useMemo(
+        () => new Map(extensionLegend.map((item) => [item.extension, item.summary])),
+        [extensionLegend],
+    );
 
     const statusLegend = useMemo(() => {
         const visibleForCount = allFileNodes.filter(
@@ -387,8 +419,19 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
 
     const { leaves, groups } = preparedTreemap;
 
-    const toggleExtension = (extension) => {
+    const toggleExtension = (extension, isolate, hideOnly) => {
         setHiddenExtensions((prev) => {
+            if (isolate) {
+                return new Set(
+                    allFileNodes
+                        .map((node) => getExtensionFromPath(node.path))
+                        .filter((availableExtension) => availableExtension !== extension),
+                );
+            }
+            if (hideOnly) {
+                return new Set([extension]);
+            }
+
             const next = new Set(prev);
             if (next.has(extension)) {
                 next.delete(extension);
@@ -399,8 +442,19 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
         });
     };
 
-    const toggleStatus = (status) => {
+    const toggleStatus = (status, isolate, hideOnly) => {
         setHiddenStatuses((prev) => {
+            if (isolate) {
+                return new Set(
+                    allFileNodes
+                        .map((node) => getChangeCategory(node))
+                        .filter((availableStatus) => availableStatus !== status),
+                );
+            }
+            if (hideOnly) {
+                return new Set([status]);
+            }
+
             const next = new Set(prev);
             if (next.has(status)) {
                 next.delete(status);
@@ -426,7 +480,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
     return (
         <div className="treemap-wrapper" ref={containerRef}>
             {leaves.length === 0 ? (
-                <div className="treemap-empty">
+                <div className="treemap-empty" style={{ height: size.height }}>
                     <Typography.Text type="secondary">表示できるデータがありません</Typography.Text>
                 </div>
             ) : (
@@ -446,8 +500,9 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 fill={extensionColorMap.get(extension) || STATUS_COLORS.default}
                                 stroke="none"
                                 strokeWidth="0"
-                                pointerEvents="none"
-                            />
+                            >
+                                <title>{extensionSummaryMap.get(extension)}</title>
+                            </rect>
                         );
                     })}
                     {leaves.map(({ leaf }) => {
@@ -521,6 +576,8 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                 </svg>
             )}
 
+            <div className="treemap-count" aria-live="polite">{`${leaves.length}ファイルを表示中`}</div>
+
             {extensionLegend.length > 0 ? (
                 <div className="treemap-legend" aria-label="TreeMap extension legend">
                     {extensionLegend.map((item) => {
@@ -530,8 +587,8 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 key={item.extension}
                                 type="button"
                                 className={`treemap-legend-item${isHidden ? ' is-hidden' : ''}`}
-                                onClick={() => toggleExtension(item.extension)}
-                                title={`${item.extension} (${formatSize(item.totalSize)})`}
+                                onClick={(event) => toggleExtension(item.extension, event.ctrlKey, event.shiftKey)}
+                                title={item.summary}
                             >
                                 <span className="treemap-legend-swatch treemap-legend-swatch--line" style={{ backgroundColor: item.color }} aria-hidden="true" />
                                 <span className="treemap-legend-label">{item.extension}</span>
@@ -550,11 +607,11 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                 key={item.status}
                                 type="button"
                                 className={`treemap-legend-item${isHidden ? ' is-hidden' : ''}`}
-                                onClick={() => toggleStatus(item.status)}
-                                title={`${item.label} (${item.count}件)`}
+                                onClick={(event) => toggleStatus(item.status, event.ctrlKey, event.shiftKey)}
+                                title={`${item.label} (${item.count}ファイル)`}
                             >
                                 <span className="treemap-legend-swatch" style={item.swatchStyle} aria-hidden="true" />
-                                <span className="treemap-legend-label">{`${item.label} (${item.count}件)`}</span>
+                                <span className="treemap-legend-label">{`${item.label} (${item.count}ファイル)`}</span>
                             </button>
                         );
                     })}
