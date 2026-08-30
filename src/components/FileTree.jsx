@@ -52,13 +52,30 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
             key: '1',
             label: 'ツリー表示',
             icon: <ProductOutlined />,
-            children: <TreeMapView
-                treeData={treeData}
-                treeMode={treeMode}
-                treeView={treeView}
-                layoutVersion={treeLayoutVersion}
-                onSelect={onSelect}
-            />
+            children: (
+                <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+                    {treeMode === 'diff' ? (
+                        <Flex gap="small" align="center" justify="flex-end">
+                            <Select
+                                value={treeView}
+                                style={{ width: 100 }}
+                                onChange={treeViewChange}
+                                options={treeViewModeOptions}
+                                size="small"
+                            />
+                        </Flex>
+                    ) : null}
+                    <div style={{ flex: 1, minHeight: 0 }}>
+                        <TreeMapView
+                            treeData={treeData}
+                            treeMode={treeMode}
+                            treeView={treeView}
+                            layoutVersion={treeLayoutVersion}
+                            onSelect={onSelect}
+                        />
+                    </div>
+                </div>
+            )
         },
         {
             key: '2',
@@ -80,27 +97,6 @@ export default function FileTree({ treeData, onSelect, treeMode = 'diff', onTree
 
     return (
         <div className="file-tree-root">
-            <Flex className="file-tree-controls" gap="medium" justify="space-between">
-                <Flex gap="small" align="center">
-                    <p>選択:</p>
-                    <Select
-                        value={treeMode}
-                        style={{ width: 140 }}
-                        onChange={handleSelectChange}
-                        options={comparisonTargetOptions}
-                        size="small"
-                    />
-                </Flex>
-                {treeMode === "diff" && activeTab === "1" ? <Flex gap="small" align="center">
-                    <Select
-                        value={treeView}
-                        style={{ width: 100 }}
-                        onChange={treeViewChange}
-                        options={treeViewModeOptions}
-                        size="small"
-                    />
-                </Flex> : null}
-            </Flex>
             <Tabs className="file-tree-tabs" activeKey={activeTab} items={tabItems} onChange={onTabChange} />
         </div>
     );

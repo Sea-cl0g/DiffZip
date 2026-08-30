@@ -41,19 +41,19 @@ function getImageMimeTypeFromPath(path) {
 }
 
 function escapeHtml(text) {
-        return String(text || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
+    return String(text || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function buildPlainFileHtml(filePath, fileText) {
-        const safePath = escapeHtml(filePath);
-        const safeText = escapeHtml(fileText);
+    const safePath = escapeHtml(filePath);
+    const safeText = escapeHtml(fileText);
 
-        return `
+    return `
         <div class="d2h-wrapper">
             <div class="d2h-file-wrapper">
                 <div class="d2h-file-header">
@@ -286,7 +286,7 @@ export default function DiffView({ files }) {
     }
 
     return (
-        <div style={{ height: '100%', minHeight: 0 }}>
+        <div style={{ flex: 1, minHeight: 0 }}>
             <Splitter
                 onResizeEnd={handleSplitterResizeEnd}
                 style={{ height: '100%', minHeight: 0, boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', backgroundColor: '#ffffff' }}
