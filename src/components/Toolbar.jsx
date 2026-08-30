@@ -12,14 +12,13 @@ function TargetSelect({ label, fileKey, uploadedFiles, selectedFile, onFileChang
     }
 
     return (
-        <Flex vertical gap="none" align="center">
-            <Text>{label}</Text>
+        <Flex vertical gap="none" align="left">
+            <Text strong>{label}</Text>
             <Select
                 value={selectedFile ? selectedFile.name : undefined}
                 placeholder="ファイルを選択"
                 onChange={handleChange}
                 options={options}
-                style={{ width: 140 }}
                 size="small"
             />
         </Flex>
