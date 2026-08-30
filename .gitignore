@@ -144,3 +144,7 @@ vite.config.ts.timestamp-*
 
 # util
 merge.bat
+
+# dev
+.vscode/
+.bat/
