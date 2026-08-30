@@ -75,7 +75,6 @@ export default function DiffView({ files }) {
     const [treeMode, setTreeMode] = useState(TREE_MODE.DIFF);
     const [isTreeReady, setIsTreeReady] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
-    const [selectedKeys, setSelectedKeys] = useState([]);
     const [diffHtml, setDiffHtml] = useState('');
     const [imageCompareUrls, setImageCompareUrls] = useState(null);
     const [treeLayoutVersion, setTreeLayoutVersion] = useState(0);
@@ -107,7 +106,6 @@ export default function DiffView({ files }) {
             setTreeMode(TREE_MODE.DIFF);
             setIsTreeReady(false);
             setSelectedFile(null);
-            setSelectedKeys([]);
             return;
         }
 
@@ -115,7 +113,6 @@ export default function DiffView({ files }) {
         setIsTreeReady(false);
         setDiffMetadata(null);
         setSelectedFile(null);
-        setSelectedKeys([]);
 
         (async () => {
             try {
@@ -148,7 +145,6 @@ export default function DiffView({ files }) {
 
         setTreeData(buildTreeData(diffMetadata, { mode: treeMode }));
         setSelectedFile(null);
-        setSelectedKeys([]);
     }, [treeMode, diffMetadata]);
 
     useEffect(() => {
@@ -278,12 +274,10 @@ export default function DiffView({ files }) {
         setTreeMode(nextMode);
     }
 
-    function handleTreeSelect(selectedKeysParam, { node }) {
-        if (node?.data !== null && node?.data !== undefined) {
+    function handleTreeSelect(_, { node }) {
+        if (node.data !== null && node.data !== undefined) {
             if (node.data?.isFile) {
                 setSelectedFile(node.data);
-                const key = node.key || node.data.key;
-                setSelectedKeys(key ? [key] : (Array.isArray(selectedKeysParam) ? selectedKeysParam : []));
             }
         }
     }
@@ -304,7 +298,7 @@ export default function DiffView({ files }) {
                             <Tree
                                 treeData={treeData}
                                 onSelect={handleTreeSelect}
-                                selectedKeys={selectedKeys}
+                                selectedKeys={selectedFile ? [selectedFile.path] : []}
                             />
                         ) : <></>}
                     </div>
@@ -329,9 +323,9 @@ export default function DiffView({ files }) {
                             <TreeMapPanel
                                 treeData={treeData}
                                 onSelect={handleTreeSelect}
+                                selectedFilePath={selectedFile?.path}
                                 treeMode={treeMode}
                                 treeLayoutVersion={treeLayoutVersion}
-                                selectedFile={selectedFile}
                             />
                         ) : <></>}
                     </div>

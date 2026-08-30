@@ -228,7 +228,7 @@ function pickNodeColor(nodeData) {
     }
 }
 
-export default function TreeMapView({ treeData, treeMode, treeView, layoutVersion = 0, onSelect, selectedFile }) {
+export default function TreeMapView({ treeData, treeMode, treeView, layoutVersion = 0, onSelect, selectedFilePath }) {
     const containerRef = useRef(null);
     const [size, setSize] = useState({ width: 0, height: 0 });
     const [hiddenExtensions, setHiddenExtensions] = useState(() => new Set());
@@ -416,13 +416,9 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
             return;
         }
 
-        const nodeData = leaf.data.data;
-        const selectedKey = nodeData?.key || leaf.data.path;
-
-        onSelect([selectedKey], {
+        onSelect([], {
             node: {
-                key: selectedKey,
-                data: nodeData,
+                data: leaf.data.data,
             },
         });
     };
@@ -459,7 +455,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                         const height = Math.max(0, leaf.y1 - leaf.y0);
                         const data = leaf.data;
                         const color = pickNodeColor(data);
-                        const isSelected = Boolean(selectedFile && (data.path === selectedFile.path || (data.key && data.key === selectedFile.key)));
+                        const isSelected = data.path === selectedFilePath;
                         const showLabel = width >= 90 && height >= 28;
                         const showNameLabel = width >= 90 && height >= 42;
                         const label = formatTileLabel(data);
@@ -473,7 +469,7 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                     height={height}
                                     fill={color}
                                     stroke={isSelected ? '#1677ff' : '#ffffff'}
-                                    strokeWidth={isSelected ? '2' : '1'}
+                                    strokeWidth={isSelected ? '3' : '1'}
                                     onClick={() => handleLeafClick(leaf)}
                                     style={{ cursor: 'pointer' }}
                                 />
@@ -485,21 +481,43 @@ export default function TreeMapView({ treeData, treeMode, treeView, layoutVersio
                                         <tspan x="4" dy={showNameLabel ? '1.2em' : '0'}>{label}</tspan>
                                     </text>
                                 ) : null}
-                                {isSelected ? (
-                                    <rect
-                                        x={1}
-                                        y={1}
-                                        width={Math.max(0, width - 2)}
-                                        height={Math.max(0, height - 2)}
-                                        fill="none"
-                                        stroke="#1677ff"
-                                        strokeWidth="3"
-                                        pointerEvents="none"
-                                    />
-                                ) : null}
                             </g>
                         );
                     })}
+                    {/* 選択中のノードを最前面に重畳描画して枠線が隣接ノードに隠れないようにする */}
+                    {(() => {
+                        const selectedObj = leaves.find(({ leaf }) => leaf.data?.path === selectedFilePath);
+                        if (!selectedObj) return null;
+                        const { leaf } = selectedObj;
+                        const width = Math.max(0, leaf.x1 - leaf.x0);
+                        const height = Math.max(0, leaf.y1 - leaf.y0);
+                        const data = leaf.data;
+                        const color = pickNodeColor(data);
+                        const showLabel = width >= 90 && height >= 28;
+                        const showNameLabel = width >= 90 && height >= 42;
+                        const label = formatTileLabel(data);
+                        const fileName = data.name || data.path;
+
+                        return (
+                            <g transform={`translate(${leaf.x0}, ${leaf.y0})`} style={{ pointerEvents: 'none' }}>
+                                <rect
+                                    width={width}
+                                    height={height}
+                                    fill={color}
+                                    stroke="#1677ff"
+                                    strokeWidth="3"
+                                />
+                                {showLabel ? (
+                                    <text x="4" y="14" fill="#ffffff" fontSize="11">
+                                        {showNameLabel ? (
+                                            <tspan x="4" dy="0">{fileName}</tspan>
+                                        ) : null}
+                                        <tspan x="4" dy={showNameLabel ? '1.2em' : '0'}>{label}</tspan>
+                                    </text>
+                                ) : null}
+                            </g>
+                        );
+                    })()}
                 </svg>
             )}
 
