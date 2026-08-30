@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { InboxOutlined } from '@ant-design/icons';
-import { Result, Splitter, Upload } from 'antd';
+import { Result, Splitter, Upload, message } from 'antd';
 import { unzip } from 'unzipit';
 import { createPatch } from 'diff';
 import { html } from 'diff2html';
@@ -10,6 +10,7 @@ import { buildTreeData } from '../utils/treeBuilder';
 import DiffImage from './DiffImage';
 import Tree from './FileTree';
 import TreeMapPanel from './TreeMapPanel';
+import { isZipFile } from '../utils/zip/isZipFile';
 
 const TREE_MODE = {
     DIFF: 'diff',
@@ -71,6 +72,7 @@ function buildPlainFileHtml(filePath, fileText) {
 }
 
 export default function DiffView({ files, onUploadFile }) {
+    const [messageApi, contextHolder] = message.useMessage();
     const [treeData, setTreeData] = useState([]);
     const [diffMetadata, setDiffMetadata] = useState(null);
     const [treeMode, setTreeMode] = useState(TREE_MODE.DIFF);
@@ -293,7 +295,12 @@ export default function DiffView({ files, onUploadFile }) {
     const uploadProps = {
         showUploadList: false,
         multiple: true,
-        beforeUpload(file) {
+        accept: '.zip',
+        async beforeUpload(file) {
+            if (!await isZipFile(file)) {
+                messageApi.error(`${file.name} は有効なzipファイルではありません`);
+                return Upload.LIST_IGNORE;
+            }
             onUploadFile(file);
             return false;
         },
@@ -301,6 +308,7 @@ export default function DiffView({ files, onUploadFile }) {
 
     return (
         <div style={{ flex: 1, minHeight: 0 }}>
+            {contextHolder}
             <Splitter
                 className={`diff-splitter${hasComparisonFiles ? '' : ' diff-splitter--awaiting-files'}`}
                 onResizeEnd={handleSplitterResizeEnd}
