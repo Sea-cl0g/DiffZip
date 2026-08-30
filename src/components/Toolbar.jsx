@@ -43,7 +43,7 @@ export default function Toolbar({ uploadedFiles = [], onUploadFile, files = {}, 
                 DiffZip
             </h2>
             <Flex justify='flex-end' gap="middle" align="flex-end">
-                <Upload {...uploadProps}>
+                <Upload {...uploadProps} multiple={true}>
                     <Button type="primary" icon={<UploadOutlined />}>アップロード</Button>
                 </Upload>
                 <TargetSelect
