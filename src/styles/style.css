@@ -23,6 +23,7 @@ body {
   gap: 8px;
   padding: 16px;
   overflow: hidden;
+  margin: 0px;
   background-color: #ffffff;
 }
 

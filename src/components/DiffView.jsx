@@ -20,7 +20,7 @@ const TREE_MODE = {
 
 const SAMPLE_ZIP_URLS = {
     before: 'https://drive.google.com/uc?export=download&id=1X0H9CL0eljnyoDmfDauacPt5uK7DvsHv',
-    after: 'https://drive.google.com/uc?export=download&id=1XUhA4QLzLIf8wGoka2ddFcJdEFCujN_2',
+    after: 'https://drive.google.com/uc?export=download&id=1jfcFdHuqySXEh_vzRaMcWJumW2Toxru2',
 };
 
 const IMAGE_EXTENSION_TO_MIME = {
