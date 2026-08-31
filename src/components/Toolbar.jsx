@@ -57,7 +57,7 @@ export default function Toolbar({ uploadedFiles = [], onUploadFile, files = {}, 
                 </Flex>
                 <Flex justify='flex-end' gap="middle" align="center">
                     <Flex gap="small">
-                        <Text  type="secondary">File1:</Text>
+                        <Text type="secondary">File1:</Text>
                         <TargetSelect
                             uploadedFiles={uploadedFiles}
                             selectedFile={files.file1}
@@ -65,7 +65,7 @@ export default function Toolbar({ uploadedFiles = [], onUploadFile, files = {}, 
                         />
                     </Flex>
                     <Flex gap="small">
-                        <Text>File2:</Text>
+                        <Text type="secondary">File2:</Text>
                         <TargetSelect
                             uploadedFiles={uploadedFiles}
                             selectedFile={files.file2}
